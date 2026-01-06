@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TON Claude MCP Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: var(--tg-theme-text-color, #000000);
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        h2 {
+            color: var(--tg-theme-text-color, #000000);
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .wallet-info {
+            background: var(--tg-theme-bg-color, #ffffff);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .wallet-address {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: var(--tg-theme-link-color, #0088cc);
+        }
+        
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--tg-theme-text-color, #000000);
+            margin: 10px 0;
+        }
+        
+        .button {
+            background: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: opacity 0.2s;
+        }
+        
+        .button:hover {
+            opacity: 0.9;
+        }
+        
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color, #000000);
+        }
+        
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--tg-theme-hint-color, #999999);
+            border-radius: 6px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            font-size: 14px;
+        }
+        
+        .transaction-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .transaction-item {
+            background: var(--tg-theme-bg-color, #ffffff);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .tx-hash {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--tg-theme-link-color, #0088cc);
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message.assistant {
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--tg-theme-hint-color, #999999);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: var(--tg-theme-text-color, #000000);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            color: var(--tg-theme-button-color, #0088cc);
+            border-bottom: 2px solid var(--tg-theme-button-color, #0088cc);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .loader {
+            text-align: center;
+            padding: 20px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+    </style>
+</head>
+<body>
+    <h1>💎 TON Claude MCP</h1>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('wallet')">Wallet</button>
+        <button class="tab" onclick="switchTab('send')">Send</button>
+        <button class="tab" onclick="switchTab('history')">History</button>
+        <button class="tab" onclick="switchTab('chat')">Chat</button>
+    </div>
+    
+    <div id="wallet-tab" class="tab-content active">
+        <div class="container">
+            <h2>Wallet Information</h2>
+            <div class="wallet-info">
+                <div class="wallet-address" id="wallet-address">Loading...</div>
+                <div class="balance" id="wallet-balance">-- TON</div>
+                <div id="wallet-status"></div>
+            </div>
+            <button class="button" onclick="refreshWallet()">Refresh</button>
+        </div>
+    </div>
+    
+    <div id="send-tab" class="tab-content">
+        <div class="container">
+            <h2>Send TON</h2>
+            <div class="input-group">
+                <label for="recipient">Recipient Address</label>
+                <input type="text" id="recipient" placeholder="EQ...">
+            </div>
+            <div class="input-group">
+                <label for="amount">Amount (TON)</label>
+                <input type="number" id="amount" step="0.001" placeholder="0.01">
+            </div>
+            <div class="input-group">
+                <label for="comment">Comment (optional)</label>
+                <textarea id="comment" rows="2" placeholder="Payment for..."></textarea>
+            </div>
+            <button class="button" onclick="sendTransaction()">Send Transaction</button>
+            <div id="send-result"></div>
+        </div>
+    </div>
+    
+    <div id="history-tab" class="tab-content">
+        <div class="container">
+            <h2>Transaction History</h2>
+            <div class="transaction-list" id="transaction-list">
+                <div class="loader">Loading transactions...</div>
+            </div>
+            <button class="button" onclick="loadHistory()">Refresh History</button>
+        </div>
+    </div>
+    
+    <div id="chat-tab" class="tab-content">
+        <div class="container">
+            <h2>Claude Assistant</h2>
+            <div class="chat-container" id="chat-container"></div>
+            <div class="input-group">
+                <input type="text" id="chat-input" placeholder="Ask about TON blockchain or your wallet..." onkeypress="handleChatKeyPress(event)">
+            </div>
+            <button class="button" onclick="sendMessage()">Send Message</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        const API_BASE = '/api';
+        let currentTab = 'wallet';
+        
+        function getInitData() {
+            return tg.initDataUnsafe || {};
+        }
+        
+        function getUserId() {
+            const initData = getInitData();
+            return initData.user?.id?.toString() || 'anonymous';
+        }
+        
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Telegram-Init-Data': tg.initData,
+                        ...options.headers
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                tg.showAlert('Error: ' + error.message);
+                throw error;
+            }
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`.tab:nth-child(${['wallet', 'send', 'history', 'chat'].indexOf(tab) + 1})`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            
+            currentTab = tab;
+            
+            if (tab === 'wallet') refreshWallet();
+            if (tab === 'history') loadHistory();
+        }
+        
+        async function refreshWallet() {
+            try {
+                const info = await apiCall('/wallet');
+                document.getElementById('wallet-address').textContent = info.address;
+                document.getElementById('wallet-balance').textContent = `${info.balance} TON`;
+                document.getElementById('wallet-status').innerHTML = `
+                    <span class="status ${info.isActive ? 'success' : 'pending'}">
+                        ${info.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                `;
+            } catch (error) {
+                document.getElementById('wallet-address').textContent = 'Error loading wallet';
+                document.getElementById('wallet-balance').textContent = '-- TON';
+            }
+        }
+        
+        async function sendTransaction() {
+            const recipient = document.getElementById('recipient').value;
+            const amount = document.getElementById('amount').value;
+            const comment = document.getElementById('comment').value;
+            
+            if (!recipient || !amount) {
+                tg.showAlert('Please fill in recipient and amount');
+                return;
+            }
+            
+            try {
+                const button = event.target;
+                button.disabled = true;
+                button.textContent = 'Sending...';
+                
+                const result = await apiCall('/send', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        toAddress: recipient,
+                        amount,
+                        comment
+                    })
+                });
+                
+                document.getElementById('send-result').innerHTML = `
+                    <div style="color: green; margin-top: 10px;">
+                        Transaction sent successfully!<br>
+                        Hash: <span class="tx-hash">${result.hash}</span>
+                    </div>
+                `;
+                
+                document.getElementById('recipient').value = '';
+                document.getElementById('amount').value = '';
+                document.getElementById('comment').value = '';
+                
+                tg.showAlert('Transaction sent successfully!');
+            } catch (error) {
+                document.getElementById('send-result').innerHTML = `
+                    <div style="color: red; margin-top: 10px;">
+                        Failed to send transaction: ${error.message}
+                    </div>
+                `;
+            } finally {
+                event.target.disabled = false;
+                event.target.textContent = 'Send Transaction';
+            }
+        }
+        
+        async function loadHistory() {
+            try {
+                const history = await apiCall('/history?limit=10');
+                const container = document.getElementById('transaction-list');
+                
+                if (history.length === 0) {
+                    container.innerHTML = '<div class="loader">No transactions found</div>';
+                    return;
+                }
+                
+                container.innerHTML = history.map(tx => `
+                    <div class="transaction-item">
+                        <div class="tx-hash">${tx.hash.substring(0, 16)}...</div>
+                        <div>Amount: ${tx.amount} TON</div>
+                        ${tx.fee ? `<div>Fee: ${tx.fee} TON</div>` : ''}
+                        <div>${new Date(tx.timestamp).toLocaleString()}</div>
+                        <span class="status ${tx.status}">${tx.status}</span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('transaction-list').innerHTML = 
+                    '<div class="loader">Error loading transactions</div>';
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML += `<div class="message user">${message}</div>`;
+            input.value = '';
+            
+            try {
+                const response = await apiCall('/chat', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: getUserId(),
+                        message
+                    })
+                });
+                
+                chatContainer.innerHTML += `<div class="message assistant">${response.response}</div>`;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            } catch (error) {
+                chatContainer.innerHTML += `<div class="message assistant">Sorry, I encountered an error. Please try again.</div>`;
+            }
+        }
+        
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        tg.ready();
+        refreshWallet();
+        
+        tg.MainButton.text = 'Refresh Wallet';
+        tg.MainButton.show();
+        tg.MainButton.onClick(() => {
+            if (currentTab === 'wallet') refreshWallet();
+            else if (currentTab === 'history') loadHistory();
+        });
+    </script>
+</body>
+</html>
