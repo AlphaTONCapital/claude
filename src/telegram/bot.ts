@@ -118,7 +118,7 @@ export class TelegramBot {
         return;
       }
 
-      const typing = ctx.sendChatAction('typing');
+      ctx.sendChatAction('typing');
       
       try {
         const conversation = await this.conversationManager.getConversation(ctx.userId);
@@ -143,7 +143,7 @@ export class TelegramBot {
         logger.error('Error handling message:', error);
         await ctx.reply('Sorry, I encountered an error while processing your message. Please try again.');
       } finally {
-        typing.then(stop => stop()).catch(() => {});
+        // Typing indicator will stop automatically
       }
     });
 
