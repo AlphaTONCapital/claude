@@ -339,7 +339,7 @@ export class JiraService {
       {
         summary: 'Setup AWS infrastructure for production deployment',
         description: 'Configure EC2, RDS, ElastiCache, and load balancer for production environment',
-        assignee: 'damir@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'To Do',
         issueType: 'Task' as const,
         priority: 'High' as const,
@@ -347,7 +347,7 @@ export class JiraService {
       {
         summary: 'Implement Redis cluster for scalable session management',
         description: 'Setup Redis cluster with proper replication and failover mechanisms',
-        assignee: 'damir@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'To Do',
         issueType: 'Task' as const,
         priority: 'Medium' as const,
@@ -355,7 +355,7 @@ export class JiraService {
       {
         summary: 'Configure CI/CD pipeline with GitHub Actions',
         description: 'Setup automated testing, building, and deployment pipeline',
-        assignee: 'damir@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'To Do',
         issueType: 'Task' as const,
         priority: 'High' as const,
@@ -363,7 +363,7 @@ export class JiraService {
       {
         summary: 'Implement monitoring and logging infrastructure',
         description: 'Setup CloudWatch, Prometheus, and Grafana for system monitoring',
-        assignee: 'damir@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'To Do',
         issueType: 'Task' as const,
         priority: 'Medium' as const,
@@ -371,7 +371,7 @@ export class JiraService {
       {
         summary: 'Setup database backup and disaster recovery',
         description: 'Implement automated backups and recovery procedures',
-        assignee: 'damir@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'To Do',
         issueType: 'Task' as const,
         priority: 'High' as const,
@@ -399,7 +399,7 @@ export class JiraService {
         description: 'Add staking, swapping, and yield farming capabilities',
         assignee: 'l@alphaton.capital',
         status: 'To Do',
-        issueType: 'Epic' as const,
+        issueType: 'Story' as const,
         priority: 'Low' as const,
       },
       {
@@ -419,11 +419,11 @@ export class JiraService {
         priority: 'Medium' as const,
       },
 
-      // Project Management tasks (Liza)
+      // Project Management tasks (assigned to Logan temporarily)
       {
         summary: 'Create project documentation and user guides',
         description: 'Write comprehensive documentation for developers and end users',
-        assignee: 'liza@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'In Progress',
         issueType: 'Task' as const,
         priority: 'High' as const,
@@ -431,7 +431,7 @@ export class JiraService {
       {
         summary: 'Define project roadmap and milestones',
         description: 'Create detailed project timeline with deliverables',
-        assignee: 'liza@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'To Do',
         issueType: 'Task' as const,
         priority: 'High' as const,
@@ -439,7 +439,7 @@ export class JiraService {
       {
         summary: 'Coordinate team sprints and meetings',
         description: 'Organize sprint planning, daily standups, and retrospectives',
-        assignee: 'liza@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'In Progress',
         issueType: 'Task' as const,
         priority: 'High' as const,
@@ -447,7 +447,7 @@ export class JiraService {
       {
         summary: 'User acceptance testing coordination',
         description: 'Organize UAT sessions and collect user feedback',
-        assignee: 'liza@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'To Do',
         issueType: 'Task' as const,
         priority: 'Medium' as const,
@@ -455,7 +455,7 @@ export class JiraService {
       {
         summary: 'Stakeholder communication and reporting',
         description: 'Regular updates to stakeholders on project progress',
-        assignee: 'liza@alphaton.capital',
+        assignee: 'l@alphaton.capital',
         status: 'In Progress',
         issueType: 'Task' as const,
         priority: 'Medium' as const,
