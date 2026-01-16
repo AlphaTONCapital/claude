@@ -18,7 +18,7 @@ describe('ConversationManager', () => {
   let conversationManager: ConversationManager;
   let mockRedisClient: any;
   
-  beforeEach(() => {
+  beforeEach(async () => {
     mockRedisClient = {
       connect: jest.fn(),
       get: jest.fn(),
@@ -36,6 +36,9 @@ describe('ConversationManager', () => {
       password: undefined,
       db: 0,
     }, 60);
+    
+    // Connect to initialize Redis client
+    await conversationManager.connect();
   });
 
   describe('getConversation', () => {
@@ -72,7 +75,8 @@ describe('ConversationManager', () => {
       
       expect(mockRedisClient.set).toHaveBeenCalledWith(
         'conversation:user123',
-        expect.any(String)
+        expect.any(String),
+        expect.objectContaining({ EX: expect.any(Number) })
       );
     });
   });

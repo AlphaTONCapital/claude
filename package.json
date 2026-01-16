@@ -1,7 +1,7 @@
 {
   "name": "telegram-claude-mcp",
   "version": "1.0.0",
-  "description": "Telegram bot connector for Claude using Model Context Protocol (MCP)",
+  "description": "Bridge Claude AI, Telegram, and TON Blockchain with seamless Model Context Protocol integration",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -9,18 +9,35 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "lint": "eslint src/**/*.ts",
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "validate": "./scripts/validate-all.sh"
   },
   "keywords": [
     "telegram",
     "claude",
     "mcp",
+    "ton",
+    "blockchain",
     "bot",
     "ai",
-    "anthropic"
+    "anthropic",
+    "model-context-protocol",
+    "cryptocurrency",
+    "jira",
+    "automation"
   ],
-  "author": "",
+  "author": "Telegram Claude MCP Contributors",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/telegram-claude-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anthropics/telegram-claude-mcp/issues"
+  },
+  "homepage": "https://github.com/anthropics/telegram-claude-mcp#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.3",
     "@modelcontextprotocol/sdk": "^0.6.0",

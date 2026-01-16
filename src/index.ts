@@ -9,8 +9,6 @@ import { MiniAppServer } from './miniapp/server.js';
 import { config } from './config/index.js';
 import { logger } from './utils/logger.js';
 import { setupMCPHandlers } from './mcp/handlers.js';
-import { setupTonMCPHandlers } from './mcp/ton-handlers.js';
-import { setupJiraMCPHandlers } from './mcp/jira-handlers.js';
 
 async function main() {
   try {
@@ -51,12 +49,17 @@ async function main() {
       tonService
     );
 
-    setupMCPHandlers(server, telegramBot, claudeService, conversationManager);
-    setupTonMCPHandlers(server, tonService);
+    setupMCPHandlers(
+      server,
+      telegramBot,
+      claudeService,
+      conversationManager,
+      tonService,
+      jiraService
+    );
     
     if (jiraService) {
-      setupJiraMCPHandlers(server, jiraService);
-      logger.info('JIRA MCP handlers initialized');
+      logger.info('JIRA service initialized');
     }
 
     await telegramBot.launch();

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "telegram-claude-mcp": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "/path/to/telegram-claude-mcp",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

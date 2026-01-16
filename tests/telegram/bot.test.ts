@@ -54,19 +54,20 @@ describe('TelegramBot', () => {
   describe('broadcastMessage', () => {
     it('should call getAllUserIds from conversation manager', async () => {
       mockConversationManager.getAllUserIds.mockResolvedValue(['1', '2', '3']);
+      // Mock sendMessage to avoid network calls and 404s
+      bot['bot'].telegram.sendMessage = jest.fn() as any;
       
-      try {
-        await bot.broadcastMessage('Test broadcast');
-      } catch (error) {
-        // Expected to fail due to missing telegram mock, but we can verify the call
-      }
+      await bot.broadcastMessage('Test broadcast');
       
       expect(mockConversationManager.getAllUserIds).toHaveBeenCalled();
+      expect(bot['bot'].telegram.sendMessage).toHaveBeenCalledTimes(3);
     });
   });
 
   describe('stop', () => {
     it('should stop the bot', () => {
+      // Mock the bot.stop method to avoid "Bot is not running" error
+      (bot['bot'].stop as jest.Mock) = jest.fn();
       expect(() => bot.stop('SIGINT')).not.toThrow();
     });
   });

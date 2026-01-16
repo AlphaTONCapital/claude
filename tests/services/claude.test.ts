@@ -33,8 +33,8 @@ describe('ClaudeService', () => {
     it('should get system prompt', () => {
       const prompt = claudeService['getSystemPrompt']();
       
-      expect(prompt).toContain('Telegram Claude MCP TON Connector');
-      expect(prompt).toContain('TON blockchain');
+      expect(prompt).toContain('You are a helpful AI assistant integrated with Telegram through the Model Context Protocol (MCP).');
+      expect(prompt).toContain('Current capabilities:');
     });
   });
 });

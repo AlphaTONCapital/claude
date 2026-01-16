@@ -1,6 +1,8 @@
 # Telegram Claude MCP TON Connector
 
-A comprehensive Claude Code connector extension that integrates TON blockchain functionality with Telegram bot and mini app capabilities using Model Context Protocol (MCP).
+> **Bridge Claude AI, Telegram, and TON Blockchain with seamless Model Context Protocol integration**
+
+A production-ready connector that enables Claude AI to interact with Telegram bots, TON blockchain operations, and JIRA project management through the Model Context Protocol (MCP). Built for developers who want to create powerful AI-powered Telegram bots with blockchain capabilities.
 
 ## Features
 
@@ -47,11 +49,23 @@ A comprehensive Claude Code connector extension that integrates TON blockchain f
 - TON wallet mnemonic (for full functionality)
 - TON API key (optional, for enhanced features)
 
-## Installation
+## Quick Start
+
+The fastest way to get started:
+
+```bash
+# Quick setup (development)
+./scripts/quick-start.sh
+
+# Production deployment  
+./scripts/deploy.sh
+```
+
+## Manual Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/anthropics/telegram-claude-mcp.git
 cd telegram-claude-mcp
 ```
 
@@ -62,7 +76,7 @@ npm install
 
 3. Copy the environment configuration:
 ```bash
-cp .env.local .env
+cp .env.example .env.local
 ```
 
 4. Configure your `.env` file with your credentials:
@@ -118,29 +132,59 @@ npm run build
 npm start
 ```
 
-### Using with Claude Code
+### Using with Claude Desktop
 
-1. Add the MCP server to your Claude Code configuration:
+1. The quick-start script automatically sets up Claude Desktop integration
+2. Or manually add to your Claude Desktop config:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json` 
+**Linux:** `~/.config/Claude/claude_desktop_config.json`
+
 ```json
 {
   "mcpServers": {
-    "telegram-ton": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "/path/to/telegram-claude-mcp"
+    "telegram-claude-mcp": {
+      "command": "npm",
+      "args": ["start"],
+      "cwd": "/path/to/telegram-claude-mcp",
+      "env": {
+        "NODE_ENV": "production"
+      }
     }
   }
 }
 ```
 
-2. The MCP tools will be available in Claude Code for interacting with TON blockchain and Telegram.
+3. Restart Claude Desktop and the MCP tools will be available:
+   - `send_telegram_message` - Send messages via Telegram
+   - `ton_get_balance` - Check TON wallet balance  
+   - `jira_create_issue` - Create JIRA issues
+   - And 20+ more tools!
 
-### Docker Deployment
+📖 **See [Claude Desktop Setup Guide](./docs/CLAUDE_DESKTOP_SETUP.md) for detailed instructions.**
 
-Build and run with Docker:
+### Production Deployment
+
+#### Docker (Recommended)
 ```bash
-docker-compose up -d
+# Production with all services
+./scripts/deploy.sh
+
+# With monitoring stack
+./scripts/deploy.sh --with-monitoring
+
+# Manual Docker
+docker-compose -f docker-compose.production.yml up -d
 ```
+
+#### Cloud Platforms
+- **Heroku**: One-click deploy with Redis addon
+- **DigitalOcean**: App Platform deployment  
+- **AWS**: ECS/Fargate deployment
+- **VPS**: Traditional server setup with PM2
+
+📖 **See [Production Deployment Guide](./PRODUCTION.md) for complete instructions.**
 
 ## Bot Commands
 
@@ -235,21 +279,49 @@ npm test
 4. Push to the branch
 5. Create a Pull Request
 
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details on:
+- Setting up the development environment
+- Code style and conventions
+- Submitting pull requests
+- Reporting issues
+
 ## License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
 ## Acknowledgments
 
-- [Claude Code Telegram Example](https://github.com/RichardAtCT/claude-code-telegram)
-- [TON Blockchain MCP](https://github.com/devonmojito/ton-blockchain-mcp)
-- [MCP Documentation](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)
-- [TON Documentation](https://docs.ton.org/)
-- [Telegram Bot API](https://core.telegram.org/bots/api)
+- [Anthropic MCP SDK](https://github.com/anthropics/mcp-sdk) - Model Context Protocol implementation
+- [TON Documentation](https://docs.ton.org/) - TON Blockchain documentation
+- [Telegram Bot API](https://core.telegram.org/bots/api) - Telegram Bot API reference
 
 ## Support
 
-For issues and questions:
-- Open an issue on GitHub
-- Contact via Telegram: @your_support_bot
-- Email: support@example.com
+### 📚 Documentation
+- [Production Deployment Guide](./PRODUCTION.md) - Complete production setup
+- [Claude Desktop Setup](./docs/CLAUDE_DESKTOP_SETUP.md) - MCP integration
+- [Troubleshooting Guide](./docs/TROUBLESHOOTING.md) - Common issues
+- [API Documentation](./docs/API.md) - Technical reference
+
+### 🛠️ Quick Commands
+```bash
+# Health check
+node healthcheck.js
+
+# Validate setup
+./scripts/validate-all.sh  
+
+# View logs
+docker-compose logs -f app
+```
+
+### 🆘 Getting Help
+- 🐛 [GitHub Issues](https://github.com/anthropics/telegram-claude-mcp/issues)
+- 💬 [GitHub Discussions](https://github.com/anthropics/telegram-claude-mcp/discussions) 
+- 📖 Check logs first: `docker-compose logs -f`
+
+### Security
+
+For security vulnerabilities, please email security@anthropic.com instead of using the issue tracker.

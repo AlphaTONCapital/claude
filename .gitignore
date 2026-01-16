@@ -85,3 +85,57 @@ ton-keystore/
 *.crt
 private/
 secrets/
+
+# Development artifacts
+.cursor/
+*.plan.*
+plan.*
+*.draft
+*.draft.*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.backup
+
+# Local development overrides
+docker-compose.local.yml
+docker-compose.dev.yml
+
+# Production specific files that shouldn't be in repo
+ssl/
+nginx/ssl/
+backups/*.sql
+backups/*.dump
+
+# System and runtime files
+.vscode/settings.json
+.history/
