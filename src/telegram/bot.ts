@@ -4,7 +4,7 @@ import { ClaudeService } from '../services/claude.js';
 import { ConversationManager } from '../services/conversation.js';
 import { TonService } from '../services/ton.js';
 import { logger } from '../utils/logger.js';
-import { Config } from '../config/index.js';
+import { config as appConfig, Config } from '../config/index.js';
 import { RateLimiter } from '../utils/rateLimiter.js';
 import { commands } from './commands.js';
 import { tonCommands } from './ton-commands.js';
@@ -89,16 +89,16 @@ export class TelegramBot {
       await ctx.reply('Started a new conversation. Previous context has been cleared.');
     });
     this.bot.command('status', commands.status(this.conversationManager));
-    this.bot.command('settings', commands.settings);
+    this.bot.command('settings', commands.settings(appConfig));
     this.bot.command('clear', async (ctx) => {
       if (!ctx.userId) return;
       await this.conversationManager.clearConversation(ctx.userId);
       await ctx.reply('Conversation history cleared.');
     });
-    
+
     if (this.config.adminUsers.length > 0) {
       this.bot.command('stats', commands.adminStats(this.conversationManager));
-      this.bot.command('broadcast', commands.broadcast);
+      this.bot.command('broadcast', commands.broadcast(this.broadcastMessage.bind(this)));
     }
     
     this.bot.command('wallet', tonCommands.wallet(this.tonService));
@@ -118,7 +118,7 @@ export class TelegramBot {
         return;
       }
 
-      ctx.sendChatAction('typing');
+      await ctx.sendChatAction('typing');
       
       try {
         const conversation = await this.conversationManager.getConversation(ctx.userId);

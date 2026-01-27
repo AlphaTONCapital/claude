@@ -1,11 +1,12 @@
 import { Context } from 'telegraf';
 import { ConversationManager } from '../services/conversation.js';
 import { BotContext } from './bot.js';
+import { Config } from '../config/index.js';
 
 export const commands = {
   start: async (ctx: Context) => {
     await ctx.reply(
-      `Welcome to Claude Telegram Bot! 🤖\n\n` +
+      `Welcome to Claude Telegram Bot!\n\n` +
       `I'm powered by Claude AI and can help you with various tasks.\n\n` +
       `Commands:\n` +
       `/help - Show available commands\n` +
@@ -27,23 +28,23 @@ export const commands = {
       `/status - Check conversation status\n` +
       `/settings - View current bot settings\n\n` +
       `Tips:\n` +
-      `• Send me any text message to chat\n` +
-      `• I remember our conversation context\n` +
-      `• Use /new to reset the context\n` +
-      `• Messages are processed with Claude AI`
+      `- Send me any text message to chat\n` +
+      `- I remember our conversation context\n` +
+      `- Use /new to reset the context\n` +
+      `- Messages are processed with Claude AI`
     );
   },
 
   status: (conversationManager: ConversationManager) => async (ctx: BotContext) => {
     if (!ctx.userId) return;
-    
+
     try {
       const conversation = await conversationManager.getConversation(ctx.userId);
       const messageCount = conversation.getMessages().length;
       const lastActivity = conversation.getLastActivity();
-      
+
       await ctx.reply(
-        `📊 Conversation Status:\n\n` +
+        `Conversation Status:\n\n` +
         `Messages: ${messageCount}\n` +
         `Last activity: ${lastActivity ? new Date(lastActivity).toLocaleString() : 'Never'}\n` +
         `User ID: ${ctx.userId}\n` +
@@ -54,13 +55,14 @@ export const commands = {
     }
   },
 
-  settings: async (ctx: Context) => {
+  settings: (config: Config) => async (ctx: Context) => {
     await ctx.reply(
-      `⚙️ Current Settings:\n\n` +
-      `Model: Claude 3.5 Sonnet\n` +
-      `Max tokens: 4096\n` +
-      `Conversation timeout: 30 minutes\n` +
-      `Rate limit: 20 messages per minute\n\n` +
+      `Current Settings:\n\n` +
+      `Model: ${config.claude.model}\n` +
+      `Max tokens: ${config.claude.maxTokens}\n` +
+      `Conversation timeout: ${config.app.conversationTimeoutMinutes} minutes\n` +
+      `Rate limit: ${config.rateLimit.maxRequests} messages per ${Math.round(config.rateLimit.windowMs / 1000)}s\n` +
+      `TON Network: ${config.ton.network}\n\n` +
       `These settings are configured by the administrator.`
     );
   },
@@ -86,21 +88,32 @@ export const commands = {
     }
   },
 
-  broadcast: async (ctx: BotContext) => {
+  broadcast: (broadcastFn: (text: string) => Promise<{ sent: number; failed: number }>) => async (ctx: BotContext) => {
     if (!ctx.isAdmin) {
       await ctx.reply('This command is only available to administrators.');
       return;
     }
-    
-    const text = ctx.message && 'text' in ctx.message 
+
+    const text = ctx.message && 'text' in ctx.message
       ? ctx.message.text.replace('/broadcast', '').trim()
       : '';
-    
+
     if (!text) {
       await ctx.reply('Usage: /broadcast <message>');
       return;
     }
-    
-    await ctx.reply('Broadcasting feature requires implementation in the bot instance.');
+
+    await ctx.reply('Broadcasting message to all users...');
+
+    try {
+      const result = await broadcastFn(text);
+      await ctx.reply(
+        `Broadcast complete!\n` +
+        `Sent: ${result.sent}\n` +
+        `Failed: ${result.failed}`
+      );
+    } catch (error) {
+      await ctx.reply('Failed to broadcast message. Please check logs for details.');
+    }
   },
 };
