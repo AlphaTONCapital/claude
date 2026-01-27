@@ -1,8 +1,7 @@
-import { TelegramBot } from '../../src/telegram/bot';
-import { ClaudeService } from '../../src/services/claude';
-import { ConversationManager } from '../../src/services/conversation';
-import { TonService } from '../../src/services/ton';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { TelegramBot } from '../../src/telegram/bot.js';
+import { ClaudeService } from '../../src/services/claude.js';
+import { ConversationManager } from '../../src/services/conversation.js';
+import { TonService } from '../../src/services/ton.js';
 
 describe('TelegramBot', () => {
   let bot: TelegramBot;

@@ -1,5 +1,4 @@
-import { JiraService } from '../../src/services/jira';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { JiraService } from '../../src/services/jira.js';
 import axios from 'axios';
 
 jest.mock('axios');
