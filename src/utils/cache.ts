@@ -16,6 +16,13 @@ export interface CacheEntry<T> {
   ttl: number;
 }
 
+export interface CacheResult<T> {
+  found: boolean;
+  value?: T;
+  error?: Error;
+  source?: 'redis' | 'memory' | 'none';
+}
+
 export class CacheManager {
   private nodeCache: NodeCache;
   private redisClient: RedisClientType | null = null;
@@ -87,6 +94,37 @@ export class CacheManager {
     } catch (error) {
       logger.error('Cache get error:', error);
       return null;
+    }
+  }
+
+  /**
+   * Get a value from cache with full metadata about the lookup result.
+   * Use this when you need to distinguish between cache miss and cache error.
+   */
+  async getWithMetadata<T>(key: string): Promise<CacheResult<T>> {
+    try {
+      // Try Redis first if available
+      if (this.redisClient) {
+        const cached = await this.redisClient.get(key);
+        if (cached) {
+          const entry: CacheEntry<T> = JSON.parse(cached);
+          logger.debug(`Cache hit (Redis): ${key}`);
+          return { found: true, value: entry.value, source: 'redis' };
+        }
+      }
+
+      // Fallback to NodeCache
+      const value = this.nodeCache.get<T>(key);
+      if (value !== undefined) {
+        logger.debug(`Cache hit (NodeCache): ${key}`);
+        return { found: true, value, source: 'memory' };
+      }
+
+      logger.debug(`Cache miss: ${key}`);
+      return { found: false, source: 'none' };
+    } catch (error) {
+      logger.error('Cache get error:', error);
+      return { found: false, error: error instanceof Error ? error : new Error(String(error)), source: 'none' };
     }
   }
 
@@ -218,19 +256,24 @@ export function cached(ttl: number = 300, keyPrefix?: string) {
 }
 
 // Cache invalidation decorator
+// Usage: Apply to methods that modify data and should invalidate related cache entries
+// The decorated class should have a 'cache' property of type CacheManager
 export function invalidateCache(cacheKey: string | ((args: any[]) => string)) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
       const result = await originalMethod.apply(this, args);
-      
-      // Invalidate cache
-      // if (this.cache && this.cache instanceof CacheManager) {
-      //   const key = typeof cacheKey === 'function' ? cacheKey(args) : cacheKey;
-      //   await this.cache.del(key);
-      //   logger.debug(`Cache invalidated: ${key}`);
-      // }
+
+      // Invalidate cache after successful method execution
+      const cache = (this as any).cache;
+      if (cache && cache instanceof CacheManager) {
+        const key = typeof cacheKey === 'function' ? cacheKey(args) : cacheKey;
+        await cache.del(key);
+        logger.debug(`Cache invalidated: ${key}`);
+      } else {
+        logger.debug(`Cache invalidation skipped for ${propertyKey}: no cache manager found`);
+      }
 
       return result;
     };
