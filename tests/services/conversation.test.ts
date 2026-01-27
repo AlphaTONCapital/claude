@@ -1,5 +1,4 @@
-import { ConversationManager, Conversation } from '../../src/services/conversation';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { ConversationManager, Conversation } from '../../src/services/conversation.js';
 import { createClient } from 'redis';
 
 jest.mock('redis', () => ({

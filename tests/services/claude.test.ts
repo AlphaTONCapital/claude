@@ -1,5 +1,4 @@
-import { ClaudeService } from '../../src/services/claude';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { ClaudeService } from '../../src/services/claude.js';
 
 jest.mock('@anthropic-ai/sdk');
 
