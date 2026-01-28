@@ -1,28 +1,42 @@
 {
   "title": "TON Claude MCP Demo",
-  "version": "1.0",
+  "version": "1.1",
+  "narrator": {
+    "name": "Eliza",
+    "description": "AI Guide with brown hair and orange eyes"
+  },
   "voice": {
     "provider": "elevenlabs",
-    "voiceId": "21m00Tcm4TlvDq8ikWAM",
-    "voiceName": "Rachel",
-    "model": "eleven_turbo_v2_5"
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "voiceName": "Bella",
+    "model": "eleven_turbo_v2_5",
+    "settings": {
+      "stability": 0.6,
+      "similarity_boost": 0.8,
+      "style": 0.3
+    }
+  },
+  "browserVoice": {
+    "preferredVoices": ["Samantha", "Karen", "Victoria", "Allison", "Google US English Female"],
+    "rate": 0.92,
+    "pitch": 1.1
   },
   "avatar": {
     "provider": "heygen",
-    "avatarId": "josh_lite3_20230714",
+    "avatarId": "Kristin_public_2_20240108",
     "background": "transparent"
   },
   "scenes": [
     {
       "id": "intro",
-      "narration": "Welcome to TON Claude. This is an AI-powered financial assistant that connects Claude AI with the TON blockchain. Let me walk you through what it can do.",
+      "narration": "Hi, I'm Eliza! Welcome to TON Claude. This is an AI-powered financial assistant that connects Claude AI with the TON blockchain. Let me show you what it can do.",
       "durationMs": 8000,
       "action": null,
       "effects": []
     },
     {
       "id": "balance_intro",
-      "narration": "First, let's check the wallet balance. I'll ask Claude to query the blockchain.",
+      "narration": "First, let's check your wallet balance. I'll ask Claude to query the blockchain for you.",
       "durationMs": 4500,
       "action": {
         "type": "type_message",
@@ -32,7 +46,7 @@
     },
     {
       "id": "balance_result",
-      "narration": "Notice how the wallet panel highlights as Claude retrieves the real-time balance from the TON network. The current balance is 5.234 TON, worth about 8 dollars.",
+      "narration": "See how the wallet panel highlights? Claude is retrieving your real-time balance from the TON network. You have 5.234 TON, worth about 8 dollars.",
       "durationMs": 7500,
       "action": {
         "type": "send_message"
@@ -43,7 +57,7 @@
     },
     {
       "id": "spending_intro",
-      "narration": "Now let's analyze recent spending patterns. Claude can examine transaction history and provide insights.",
+      "narration": "Now let's analyze your spending patterns. Claude can examine your transaction history and give you useful insights.",
       "durationMs": 5500,
       "action": {
         "type": "type_message",
@@ -53,7 +67,7 @@
     },
     {
       "id": "spending_result",
-      "narration": "The transaction panel lights up as Claude processes the spending data. You can see it categorizes transactions and identifies patterns.",
+      "narration": "Watch the transaction panel light up as Claude processes your spending data. It categorizes everything and identifies patterns in your activity.",
       "durationMs": 6500,
       "action": {
         "type": "send_message"
@@ -64,7 +78,7 @@
     },
     {
       "id": "send_intro",
-      "narration": "Let's send some TON. I'll initiate a transfer of half a TON to another wallet address.",
+      "narration": "Let's send some TON. I'll initiate a transfer of half a TON to another wallet.",
       "durationMs": 5000,
       "action": {
         "type": "type_message",
@@ -74,7 +88,7 @@
     },
     {
       "id": "send_prepare",
-      "narration": "Claude prepares the transaction and asks for confirmation. This two-step process ensures you never send funds accidentally.",
+      "narration": "Claude prepares the transaction and asks for confirmation. This two-step process keeps your funds safe from accidental transfers.",
       "durationMs": 6000,
       "action": {
         "type": "send_message"
@@ -85,7 +99,7 @@
     },
     {
       "id": "confirm_intro",
-      "narration": "I'll confirm the transaction now. Watch the balance update in real-time.",
+      "narration": "I'll confirm the transaction now. Watch the balance update in real-time!",
       "durationMs": 4000,
       "action": {
         "type": "type_message",
@@ -95,7 +109,7 @@
     },
     {
       "id": "confirm_result",
-      "narration": "The transaction is confirmed! Notice how the balance animates down from 5.234 to 4.731 TON, and a new transaction appears in the history.",
+      "narration": "Transaction confirmed! Notice how the balance animates down and a new transaction appears in your history. That's the blockchain in action.",
       "durationMs": 7000,
       "action": {
         "type": "send_message"
@@ -108,7 +122,7 @@
     },
     {
       "id": "stake_intro",
-      "narration": "Claude also supports staking. Let's stake 2 TON to earn passive income.",
+      "narration": "Claude also supports staking. Let's stake 2 TON to earn some passive income.",
       "durationMs": 4500,
       "action": {
         "type": "type_message",
@@ -118,7 +132,7 @@
     },
     {
       "id": "stake_result",
-      "narration": "The staking badge appears showing 2 TON staked at 4.5% APY. Your funds are now earning yield on the TON network.",
+      "narration": "The staking badge appears showing your 2 TON staked at 4.5% APY. Your funds are now earning yield on the TON network!",
       "durationMs": 6000,
       "action": {
         "type": "send_message"
@@ -130,7 +144,7 @@
     },
     {
       "id": "nft_intro",
-      "narration": "Finally, let's view the NFT collection. TON has a thriving NFT ecosystem.",
+      "narration": "Finally, let's check out your NFT collection. TON has a thriving NFT ecosystem.",
       "durationMs": 4500,
       "action": {
         "type": "type_message",
@@ -140,7 +154,7 @@
     },
     {
       "id": "nft_result",
-      "narration": "The NFT panel highlights showing your digital collectibles. You can view, transfer, or list them for sale directly through Claude.",
+      "narration": "The NFT panel highlights, showing your digital collectibles. You can view, transfer, or list them for sale directly through Claude.",
       "durationMs": 6500,
       "action": {
         "type": "send_message"
@@ -151,7 +165,7 @@
     },
     {
       "id": "outro",
-      "narration": "That's TON Claude MCP. An AI assistant that makes blockchain finance accessible, secure, and conversational. Thank you for watching.",
+      "narration": "And that's TON Claude! An AI assistant that makes blockchain finance accessible, secure, and conversational. Thanks for watching!",
       "durationMs": 7500,
       "action": null,
       "effects": [
