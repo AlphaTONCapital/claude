@@ -213,8 +213,9 @@ export class MiniAppServer {
   async start() {
     return new Promise<void>((resolve) => {
       this.server = createServer(this.app);
-      this.server.listen(this.config.port, () => {
-        logger.info(`Mini App server started on port ${this.config.port}`);
+      // Listen on 0.0.0.0 to accept connections from Railway's load balancer
+      this.server.listen(this.config.port, '0.0.0.0', () => {
+        logger.info(`Mini App server started on 0.0.0.0:${this.config.port}`);
         resolve();
       });
     });
