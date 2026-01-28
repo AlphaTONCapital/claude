@@ -76,11 +76,17 @@ async function main() {
 
     await miniAppServer.start();
     logger.info(`Mini App server started on port ${miniAppPort}`);
-    
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    
-    logger.info('MCP Server connected via stdio');
+
+    // Only connect MCP stdio transport if not running as web server
+    // Railway/web deployments set PORT env var, MCP mode doesn't
+    if (!process.env.PORT) {
+      const transport = new StdioServerTransport();
+      await server.connect(transport);
+      logger.info('MCP Server connected via stdio');
+    } else {
+      logger.info('Running in web server mode, MCP stdio transport disabled');
+    }
+
     logger.info('Telegram bot is running...');
 
     process.once('SIGINT', async () => {
