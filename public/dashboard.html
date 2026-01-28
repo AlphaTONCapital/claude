@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TON Claude MCP - Command Dashboard</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --tg-theme-bg-color: #1a1a2e;
+            --tg-theme-text-color: #ffffff;
+            --tg-theme-hint-color: #888888;
+            --tg-theme-link-color: #0088cc;
+            --tg-theme-button-color: #0088cc;
+            --tg-theme-button-text-color: #ffffff;
+            --accent: #00d4aa;
+            --accent-dim: rgba(0,212,170,0.2);
+            --danger: #ff6363;
+            --warning: #f39c12;
+            --panel-bg: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: var(--tg-theme-text-color, #fff);
+            min-height: 100vh;
+        }
+
+        /* ==================== TOAST NOTIFICATIONS ==================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInRight 0.4s ease-out;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .toast.success { background: linear-gradient(135deg, #00d4aa, #00b894); }
+        .toast.error { background: linear-gradient(135deg, #ff6363, #e74c3c); }
+        .toast.info { background: linear-gradient(135deg, #0088cc, #0066aa); }
+        .toast.fadeOut { animation: slideOutRight 0.4s ease-in forwards; }
+
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+        /* ==================== DESKTOP HEADER ==================== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin: 15px;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .price-ticker {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .price { font-size: 20px; font-weight: bold; color: var(--accent); }
+        .change { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .change.up { background: rgba(0,212,170,0.2); color: var(--accent); }
+        .change.down { background: rgba(255,99,99,0.2); color: var(--danger); }
+
+        /* ==================== DESKTOP DASHBOARD GRID ==================== */
+        .desktop-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            grid-template-rows: auto auto;
+            gap: 15px;
+            padding: 0 15px 15px;
+            height: calc(100vh - 90px);
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .panel.highlight {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(0,212,170,0.4), inset 0 0 20px rgba(0,212,170,0.1);
+            animation: pulseGlow 1.5s ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 30px rgba(0,212,170,0.4), inset 0 0 20px rgba(0,212,170,0.1); }
+            50% { box-shadow: 0 0 50px rgba(0,212,170,0.6), inset 0 0 30px rgba(0,212,170,0.2); }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .panel-content { flex: 1; overflow-y: auto; }
+
+        /* ==================== WALLET PANEL ==================== */
+        .wallet-address {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 11px;
+            color: var(--accent);
+            background: var(--accent-dim);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            word-break: break-all;
+            border: 1px solid rgba(0,212,170,0.2);
+        }
+
+        .balance-display { text-align: center; padding: 20px 0; }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            transition: color 0.3s;
+        }
+
+        .balance-amount.changing { color: var(--accent); }
+
+        .balance-usd { font-size: 16px; color: #888; margin-top: 5px; }
+
+        .staking-badge {
+            display: none;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            text-align: center;
+            font-size: 13px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .staking-badge.visible { display: block; }
+
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .token-list { margin-top: 12px; }
+
+        .token-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.3s;
+        }
+
+        .token-item.flash-green { background: rgba(0,212,170,0.2); animation: flashGreen 0.8s ease-out; }
+        .token-item.flash-red { background: rgba(255,99,99,0.2); animation: flashRed 0.8s ease-out; }
+
+        @keyframes flashGreen { 0% { background: rgba(0,212,170,0.4); } 100% { background: transparent; } }
+        @keyframes flashRed { 0% { background: rgba(255,99,99,0.4); } 100% { background: transparent; } }
+
+        .token-name { color: #ccc; font-weight: 500; }
+        .token-balance { color: var(--accent); font-weight: 600; font-family: monospace; }
+
+        /* ==================== CHAT PANEL ==================== */
+        .chat-panel { grid-row: span 2; }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            padding-right: 5px;
+            scroll-behavior: smooth;
+        }
+
+        .message-wrapper { margin-bottom: 12px; animation: messageIn 0.3s ease-out; }
+
+        @keyframes messageIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #0088cc, #0066aa);
+            margin-left: 15%;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            background: rgba(255,255,255,0.08);
+            margin-right: 8%;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .message-content {
+            white-space: pre-wrap;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .message-content.collapsed { max-height: 60px; position: relative; }
+
+        .message-content.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(transparent, rgba(255,255,255,0.08));
+            pointer-events: none;
+        }
+
+        .message.user .message-content.collapsed::after {
+            background: linear-gradient(transparent, rgba(0,102,170,0.9));
+        }
+
+        .message-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 10px;
+        }
+
+        .message-timestamp { color: #666; }
+
+        .message-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .tool-badge {
+            background: var(--accent-dim);
+            color: var(--accent);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tool-badge.wallet { background: var(--accent-dim); color: var(--accent); }
+        .tool-badge.tx { background: rgba(0,136,204,0.2); color: #0088cc; }
+        .tool-badge.swap { background: rgba(156,39,176,0.2); color: #9c27b0; }
+        .tool-badge.stake { background: rgba(243,156,18,0.2); color: #f39c12; }
+        .tool-badge.nft { background: rgba(233,30,99,0.2); color: #e91e63; }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #0088cc;
+            font-size: 11px;
+            cursor: pointer;
+            padding: 2px 0;
+            margin-top: 4px;
+        }
+
+        .expand-btn:hover { text-decoration: underline; }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            width: fit-content;
+        }
+
+        .typing-indicator.visible { display: block; }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin-right: 4px;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+        }
+
+        .chat-input-container { display: flex; gap: 10px; }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus { outline: none; border-color: #0088cc; }
+        .chat-input::placeholder { color: #666; }
+
+        .send-btn {
+            background: linear-gradient(135deg, #0088cc, #0066aa);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,136,204,0.4); }
+
+        /* ==================== TRANSACTION PANEL ==================== */
+        .tx-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+        }
+
+        .tx-item.new {
+            animation: txSlideIn 0.5s ease-out;
+            background: rgba(0,212,170,0.15);
+        }
+
+        @keyframes txSlideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .tx-info { flex: 1; }
+        .tx-hash { font-family: monospace; font-size: 11px; color: #0088cc; }
+        .tx-comment { font-size: 12px; color: #888; margin-top: 3px; }
+        .tx-time { font-size: 10px; color: #666; margin-top: 2px; }
+        .tx-amount { font-weight: bold; font-size: 15px; }
+        .tx-amount.out { color: var(--danger); }
+        .tx-amount.in { color: var(--accent); }
+
+        /* ==================== QUICK ACTIONS ==================== */
+        .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+
+        .action-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            color: #fff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: rgba(0,136,204,0.3);
+            border-color: #0088cc;
+            transform: translateY(-2px);
+        }
+
+        .action-btn .icon { font-size: 22px; margin-bottom: 6px; }
+
+        /* ==================== NFT PANEL ==================== */
+        .nft-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .nft-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .nft-card:hover { transform: translateY(-3px); border-color: rgba(0,212,170,0.3); }
+
+        .nft-image { font-size: 44px; margin-bottom: 8px; }
+        .nft-name { font-size: 13px; font-weight: 600; }
+        .nft-collection { font-size: 11px; color: #888; margin-top: 2px; }
+        .nft-value { font-size: 12px; color: var(--accent); margin-top: 6px; font-weight: 500; }
+
+        /* ==================== MARKET STATS ==================== */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .stat-label { color: #888; font-size: 13px; }
+        .stat-value { color: #fff; font-weight: 600; font-size: 14px; }
+
+        /* ==================== SCROLLBAR ==================== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        /* ==================== MOBILE VIEW ==================== */
+        .mobile-view { display: none; }
+
+        /* ==================== MOBILE STYLES ==================== */
+        @media (max-width: 768px) {
+            body {
+                background: var(--tg-theme-bg-color, #1a1a2e);
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .desktop-view { display: none !important; }
+            .header { display: none !important; }
+            .mobile-view {
+                display: flex !important;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            /* Mobile Header */
+            .mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 16px;
+                background: var(--panel-bg);
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+
+            .mobile-header-left { display: flex; align-items: center; gap: 8px; }
+            .mobile-header h1 { font-size: 16px; font-weight: 600; }
+            .mobile-header-right { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+            .status-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+
+            /* Mobile Balance Bar */
+            .mobile-balance-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 14px 16px;
+                background: linear-gradient(135deg, rgba(0,136,204,0.15), rgba(0,212,170,0.1));
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+
+            .mobile-balance-main { display: flex; align-items: baseline; gap: 8px; }
+            .mobile-balance-amount { font-size: 24px; font-weight: bold; transition: color 0.3s; }
+            .mobile-balance-amount.changing { color: var(--accent); }
+            .mobile-balance-usd { font-size: 13px; color: var(--tg-theme-hint-color, #888); }
+
+            .mobile-staking-badge {
+                display: none;
+                background: linear-gradient(135deg, #f39c12, #e67e22);
+                padding: 6px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                animation: badgeIn 0.4s ease-out;
+            }
+
+            .mobile-staking-badge.visible { display: flex; align-items: center; gap: 4px; }
+
+            @keyframes badgeIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+            /* Mobile Tab Bar */
+            .mobile-tab-bar {
+                display: flex;
+                padding: 8px 12px;
+                gap: 8px;
+                background: var(--panel-bg);
+                border-bottom: 1px solid var(--border);
+                overflow-x: auto;
+                flex-shrink: 0;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .mobile-tab-bar::-webkit-scrollbar { display: none; }
+
+            .mobile-tab-btn {
+                position: relative;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 14px;
+                background: transparent;
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                color: var(--tg-theme-hint-color, #888);
+                font-size: 12px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            .mobile-tab-btn.active {
+                background: var(--tg-theme-button-color, #0088cc);
+                border-color: var(--tg-theme-button-color, #0088cc);
+                color: var(--tg-theme-button-text-color, #fff);
+            }
+
+            .mobile-tab-btn.glowing {
+                border-color: var(--accent);
+                box-shadow: 0 0 15px rgba(0,212,170,0.5);
+                animation: tabGlow 1s ease-in-out infinite;
+            }
+
+            @keyframes tabGlow {
+                0%, 100% { box-shadow: 0 0 15px rgba(0,212,170,0.5); }
+                50% { box-shadow: 0 0 25px rgba(0,212,170,0.8); }
+            }
+
+            .mobile-tab-badge {
+                position: absolute;
+                top: -4px;
+                right: -4px;
+                width: 16px;
+                height: 16px;
+                background: var(--danger);
+                border-radius: 50%;
+                font-size: 10px;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                animation: badgePop 0.3s ease-out;
+            }
+
+            .mobile-tab-badge.visible { display: flex; }
+
+            @keyframes badgePop { from { transform: scale(0); } to { transform: scale(1); } }
+
+            /* Mobile Main Content */
+            .mobile-main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+            /* Mobile Chat */
+            .mobile-chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+            .mobile-chat-messages { flex: 1; overflow-y: auto; padding: 12px 16px; scroll-behavior: smooth; }
+
+            .mobile-typing-indicator {
+                display: none;
+                padding: 12px 16px;
+                background: var(--panel-bg);
+                border-radius: 16px;
+                border: 1px solid var(--border);
+                width: fit-content;
+                margin: 0 16px 12px;
+            }
+
+            .mobile-typing-indicator.visible { display: flex; gap: 4px; }
+
+            .mobile-typing-indicator span {
+                width: 8px;
+                height: 8px;
+                background: var(--accent);
+                border-radius: 50%;
+                animation: typingBounce 1.4s infinite ease-in-out;
+            }
+
+            .mobile-typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+            .mobile-typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+            /* Mobile Chat Input */
+            .mobile-chat-input-container {
+                display: flex;
+                gap: 8px;
+                padding: 12px 16px;
+                background: var(--panel-bg);
+                border-top: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+
+            .mobile-chat-input {
+                flex: 1;
+                background: rgba(255,255,255,0.08);
+                border: 1px solid var(--border);
+                border-radius: 24px;
+                padding: 12px 16px;
+                color: var(--tg-theme-text-color, #fff);
+                font-size: 14px;
+            }
+
+            .mobile-chat-input:focus { outline: none; border-color: var(--tg-theme-button-color, #0088cc); }
+            .mobile-chat-input::placeholder { color: var(--tg-theme-hint-color, #666); }
+
+            .mobile-send-btn {
+                background: var(--tg-theme-button-color, #0088cc);
+                border: none;
+                border-radius: 24px;
+                padding: 12px 20px;
+                color: var(--tg-theme-button-text-color, #fff);
+                font-weight: 600;
+                font-size: 14px;
+                cursor: pointer;
+            }
+
+            .mobile-send-btn:active { transform: scale(0.95); }
+
+            /* Mobile message styles */
+            .mobile-view .message { max-width: 85%; border-radius: 16px; }
+            .mobile-view .message.user { border-bottom-right-radius: 4px; }
+            .mobile-view .message.assistant { border-bottom-left-radius: 4px; }
+
+            /* Mobile Panel Overlays */
+            .mobile-panel-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: var(--tg-theme-bg-color, #1a1a2e);
+                z-index: 100;
+                display: none;
+                flex-direction: column;
+                animation: panelSlideIn 0.3s ease-out;
+            }
+
+            .mobile-panel-overlay.active { display: flex; }
+
+            @keyframes panelSlideIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+            .mobile-panel-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .mobile-panel-title { font-size: 18px; font-weight: 600; }
+
+            .mobile-panel-close {
+                background: none;
+                border: none;
+                color: var(--tg-theme-text-color, #fff);
+                font-size: 24px;
+                cursor: pointer;
+                padding: 4px 8px;
+            }
+
+            .mobile-panel-content { flex: 1; overflow-y: auto; padding: 16px; }
+
+            /* Mobile Quick Actions */
+            .mobile-quick-actions-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .mobile-quick-action-btn {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                padding: 20px 16px;
+                background: var(--panel-bg);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                color: var(--tg-theme-text-color, #fff);
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .mobile-quick-action-btn:active {
+                transform: scale(0.95);
+                background: var(--accent-dim);
+                border-color: var(--accent);
+            }
+
+            .mobile-quick-action-btn .icon { font-size: 28px; }
+            .mobile-quick-action-btn .label { font-size: 13px; font-weight: 500; }
+
+            /* Mobile token items */
+            .mobile-token-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 14px;
+                background: var(--panel-bg);
+                border-radius: 12px;
+                margin-bottom: 8px;
+                border: 1px solid var(--border);
+            }
+
+            .mobile-token-info { display: flex; align-items: center; gap: 12px; }
+            .mobile-token-icon { font-size: 24px; }
+            .mobile-token-name { font-weight: 600; font-size: 15px; }
+            .mobile-token-symbol { color: var(--tg-theme-hint-color, #888); font-size: 12px; }
+            .mobile-token-balance { font-weight: 600; font-size: 16px; color: var(--accent); font-family: monospace; }
+
+            /* Mobile tx items */
+            .mobile-tx-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 14px;
+                background: var(--panel-bg);
+                border-radius: 12px;
+                margin-bottom: 8px;
+                border: 1px solid var(--border);
+            }
+
+            .mobile-tx-item.new {
+                animation: txSlideIn 0.5s ease-out;
+                background: rgba(0,212,170,0.15);
+                border-color: var(--accent);
+            }
+
+            /* Mobile NFT grid */
+            .mobile-nft-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+            .mobile-nft-card {
+                background: var(--panel-bg);
+                border-radius: 16px;
+                padding: 16px;
+                text-align: center;
+                border: 1px solid var(--border);
+            }
+
+            .mobile-nft-image { font-size: 48px; margin-bottom: 8px; }
+            .mobile-nft-name { font-size: 14px; font-weight: 600; }
+            .mobile-nft-collection { font-size: 11px; color: var(--tg-theme-hint-color, #888); margin-top: 4px; }
+            .mobile-nft-value { font-size: 13px; color: var(--accent); margin-top: 8px; font-weight: 500; }
+
+            /* Mobile stat cards */
+            .mobile-stat-card {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px;
+                background: var(--panel-bg);
+                border-radius: 12px;
+                margin-bottom: 8px;
+                border: 1px solid var(--border);
+            }
+
+            .mobile-stat-label { color: var(--tg-theme-hint-color, #888); font-size: 14px; }
+            .mobile-stat-value { font-weight: 600; font-size: 16px; }
+
+            /* Toast adjustments for mobile */
+            .toast-container {
+                top: 60px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 350px;
+            }
+
+            .toast { animation: toastIn 0.3s ease-out; }
+            @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            .toast.fadeOut { animation: toastOut 0.3s ease-in forwards; }
+            @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ==================== DESKTOP VIEW ==================== -->
+    <div class="header">
+        <h1>💎 TON Claude MCP</h1>
+        <div class="price-ticker">
+            <span style="color: #888;">TON</span>
+            <span class="price" id="ton-price">$1.53</span>
+            <span class="change down" id="ton-change">-0.05%</span>
+            <span style="color: #666; font-size: 12px;">MCap: $3.72B</span>
+        </div>
+    </div>
+
+    <div class="desktop-view">
+        <!-- Wallet Panel -->
+        <div class="panel" id="wallet-panel">
+            <div class="panel-header">
+                <span class="panel-title">💰 Wallet</span>
+                <span style="color: #00d4aa; font-size: 12px;">● Connected</span>
+            </div>
+            <div class="panel-content">
+                <div class="wallet-address" id="wallet-address">EQDtFpEwcFAEcRe5mLVh2N6C0x-_hJEM7W61_JLnSF74p4q2</div>
+                <div class="balance-display">
+                    <div class="balance-amount" id="balance">5.234 TON</div>
+                    <div class="balance-usd" id="balance-usd">≈ $8.01</div>
+                </div>
+                <div class="staking-badge" id="staking-badge">
+                    🔒 <span id="staked-amount">0</span> TON Staked • <span id="staking-apy">4.5%</span> APY
+                </div>
+                <div class="token-list" id="token-list">
+                    <div class="token-item" data-token="USDT">
+                        <span class="token-name">USDT</span>
+                        <span class="token-balance" id="usdt-balance">150.00</span>
+                    </div>
+                    <div class="token-item" data-token="NOT">
+                        <span class="token-name">NOT</span>
+                        <span class="token-balance" id="not-balance">5,000</span>
+                    </div>
+                    <div class="token-item" data-token="STON">
+                        <span class="token-name">STON</span>
+                        <span class="token-balance" id="ston-balance">25.5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions + Market -->
+        <div class="panel" id="actions-panel">
+            <div class="panel-header">
+                <span class="panel-title">⚡ Quick Actions</span>
+            </div>
+            <div class="panel-content">
+                <div class="quick-actions">
+                    <div class="action-btn" onclick="quickAction('send')">
+                        <div class="icon">📤</div>
+                        <div>Send</div>
+                    </div>
+                    <div class="action-btn" onclick="quickAction('swap')">
+                        <div class="icon">🔄</div>
+                        <div>Swap</div>
+                    </div>
+                    <div class="action-btn" onclick="quickAction('stake')">
+                        <div class="icon">💰</div>
+                        <div>Stake</div>
+                    </div>
+                    <div class="action-btn" onclick="quickAction('nft')">
+                        <div class="icon">🖼️</div>
+                        <div>NFTs</div>
+                    </div>
+                </div>
+
+                <div class="panel-header" style="margin-top: 8px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <span class="panel-title">📈 Market</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">24h Volume</span>
+                    <span class="stat-value">$69.6M</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Market Cap</span>
+                    <span class="stat-value">$3.72B</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Rank</span>
+                    <span class="stat-value">#18</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">TVL</span>
+                    <span class="stat-value">$412M</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Panel (spans 2 rows) -->
+        <div class="panel chat-panel" id="chat-panel">
+            <div class="panel-header">
+                <span class="panel-title">🤖 Claude Assistant</span>
+                <span style="color: #00d4aa; font-size: 11px;">AI-Powered</span>
+            </div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask Claude anything..." onkeypress="if(event.key==='Enter')sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- Transactions Panel -->
+        <div class="panel" id="tx-panel">
+            <div class="panel-header">
+                <span class="panel-title">📜 Recent Transactions</span>
+            </div>
+            <div class="panel-content" id="tx-list">
+                <div class="tx-item">
+                    <div class="tx-info">
+                        <div class="tx-hash">a1b2c3d4e5f6...</div>
+                        <div class="tx-comment">Coffee payment</div>
+                        <div class="tx-time">2 hours ago</div>
+                    </div>
+                    <div class="tx-amount out">-0.5 TON</div>
+                </div>
+                <div class="tx-item">
+                    <div class="tx-info">
+                        <div class="tx-hash">b2c3d4e5f678...</div>
+                        <div class="tx-comment">Salary deposit</div>
+                        <div class="tx-time">1 day ago</div>
+                    </div>
+                    <div class="tx-amount in">+2.0 TON</div>
+                </div>
+                <div class="tx-item">
+                    <div class="tx-info">
+                        <div class="tx-hash">c3d4e5f67890...</div>
+                        <div class="tx-comment">NFT purchase</div>
+                        <div class="tx-time">2 days ago</div>
+                    </div>
+                    <div class="tx-amount out">-1.0 TON</div>
+                </div>
+                <div class="tx-item">
+                    <div class="tx-info">
+                        <div class="tx-hash">d4e5f6789012...</div>
+                        <div class="tx-comment">Staking reward</div>
+                        <div class="tx-time">3 days ago</div>
+                    </div>
+                    <div class="tx-amount in">+0.25 TON</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NFT Panel -->
+        <div class="panel" id="nft-panel">
+            <div class="panel-header">
+                <span class="panel-title">🖼️ NFT Collection</span>
+                <span style="color: #888; font-size: 11px;">2 items</span>
+            </div>
+            <div class="panel-content">
+                <div class="nft-grid">
+                    <div class="nft-card">
+                        <div class="nft-image">💎</div>
+                        <div class="nft-name">Diamond #1234</div>
+                        <div class="nft-collection">TON Diamonds</div>
+                        <div class="nft-value">Floor: 2.5 TON</div>
+                    </div>
+                    <div class="nft-card">
+                        <div class="nft-image">👾</div>
+                        <div class="nft-name">Punk #5678</div>
+                        <div class="nft-collection">TON Punks</div>
+                        <div class="nft-value">Floor: 15 TON</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MOBILE VIEW ==================== -->
+    <div class="mobile-view">
+        <div class="mobile-header">
+            <div class="mobile-header-left">
+                <span style="font-size: 20px;">💎</span>
+                <h1>TON Claude</h1>
+            </div>
+            <div class="mobile-header-right">
+                <span class="status-dot"></span>
+                <span class="price">$1.53</span>
+            </div>
+        </div>
+
+        <div class="mobile-balance-bar">
+            <div class="mobile-balance-main">
+                <span class="mobile-balance-amount" id="mobile-balance">5.234 TON</span>
+                <span class="mobile-balance-usd" id="mobile-balance-usd">≈ $8.01</span>
+            </div>
+            <div class="mobile-staking-badge" id="mobile-staking-badge">
+                🔒 <span id="mobile-staked-amount">0</span> Staked
+            </div>
+        </div>
+
+        <div class="mobile-tab-bar">
+            <button class="mobile-tab-btn active" data-tab="chat" onclick="switchMobileTab('chat')">
+                <span>💬</span><span>Chat</span>
+            </button>
+            <button class="mobile-tab-btn" data-tab="wallet" onclick="switchMobileTab('wallet')">
+                <span>💰</span><span>Wallet</span>
+                <span class="mobile-tab-badge" id="mobile-wallet-badge"></span>
+            </button>
+            <button class="mobile-tab-btn" data-tab="tx" onclick="switchMobileTab('tx')">
+                <span>📜</span><span>Activity</span>
+                <span class="mobile-tab-badge" id="mobile-tx-badge"></span>
+            </button>
+            <button class="mobile-tab-btn" data-tab="nft" onclick="switchMobileTab('nft')">
+                <span>🖼️</span><span>NFTs</span>
+                <span class="mobile-tab-badge" id="mobile-nft-badge"></span>
+            </button>
+            <button class="mobile-tab-btn" data-tab="market" onclick="switchMobileTab('market')">
+                <span>📈</span><span>Market</span>
+            </button>
+        </div>
+
+        <div class="mobile-main-content">
+            <div class="mobile-chat-container" id="mobile-chat-view">
+                <div class="mobile-chat-messages" id="mobile-chat-messages"></div>
+                <div class="mobile-typing-indicator" id="mobile-typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="mobile-chat-input-container">
+                    <input type="text" class="mobile-chat-input" id="mobile-chat-input" placeholder="Ask Claude anything..." onkeypress="if(event.key==='Enter')sendMessage()">
+                    <button class="mobile-send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Wallet Panel -->
+        <div class="mobile-panel-overlay" id="mobile-wallet-panel">
+            <div class="mobile-panel-header">
+                <span class="mobile-panel-title">💰 Wallet</span>
+                <button class="mobile-panel-close" onclick="closeMobilePanel('wallet')">&times;</button>
+            </div>
+            <div class="mobile-panel-content">
+                <div class="wallet-address">EQDtFpEwcFAEcRe5mLVh2N6C0x-_hJEM7W61_JLnSF74p4q2</div>
+                <div class="mobile-quick-actions-grid">
+                    <div class="mobile-quick-action-btn" onclick="quickAction('send')">
+                        <span class="icon">📤</span><span class="label">Send</span>
+                    </div>
+                    <div class="mobile-quick-action-btn" onclick="quickAction('swap')">
+                        <span class="icon">🔄</span><span class="label">Swap</span>
+                    </div>
+                    <div class="mobile-quick-action-btn" onclick="quickAction('stake')">
+                        <span class="icon">💰</span><span class="label">Stake</span>
+                    </div>
+                    <div class="mobile-quick-action-btn" onclick="quickAction('receive')">
+                        <span class="icon">📥</span><span class="label">Receive</span>
+                    </div>
+                </div>
+                <h3 style="margin-bottom: 12px; font-size: 14px; color: #888;">TOKEN BALANCES</h3>
+                <div id="mobile-token-list">
+                    <div class="mobile-token-item" data-token="TON">
+                        <div class="mobile-token-info">
+                            <span class="mobile-token-icon">💎</span>
+                            <div><div class="mobile-token-name">TON</div><div class="mobile-token-symbol">Toncoin</div></div>
+                        </div>
+                        <span class="mobile-token-balance" id="mobile-ton-token-balance">5.234</span>
+                    </div>
+                    <div class="mobile-token-item" data-token="USDT">
+                        <div class="mobile-token-info">
+                            <span class="mobile-token-icon">💵</span>
+                            <div><div class="mobile-token-name">USDT</div><div class="mobile-token-symbol">Tether USD</div></div>
+                        </div>
+                        <span class="mobile-token-balance" id="mobile-usdt-balance">150.00</span>
+                    </div>
+                    <div class="mobile-token-item" data-token="NOT">
+                        <div class="mobile-token-info">
+                            <span class="mobile-token-icon">🔔</span>
+                            <div><div class="mobile-token-name">NOT</div><div class="mobile-token-symbol">Notcoin</div></div>
+                        </div>
+                        <span class="mobile-token-balance" id="mobile-not-balance">5,000</span>
+                    </div>
+                    <div class="mobile-token-item" data-token="STON">
+                        <div class="mobile-token-info">
+                            <span class="mobile-token-icon">🪨</span>
+                            <div><div class="mobile-token-name">STON</div><div class="mobile-token-symbol">STON.fi</div></div>
+                        </div>
+                        <span class="mobile-token-balance" id="mobile-ston-balance">25.5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Transactions Panel -->
+        <div class="mobile-panel-overlay" id="mobile-tx-panel">
+            <div class="mobile-panel-header">
+                <span class="mobile-panel-title">📜 Activity</span>
+                <button class="mobile-panel-close" onclick="closeMobilePanel('tx')">&times;</button>
+            </div>
+            <div class="mobile-panel-content" id="mobile-tx-list">
+                <div class="mobile-tx-item">
+                    <div class="tx-info"><div class="tx-hash">a1b2c3d4e5f6...</div><div class="tx-comment">Coffee payment</div><div class="tx-time">2 hours ago</div></div>
+                    <div class="tx-amount out">-0.5 TON</div>
+                </div>
+                <div class="mobile-tx-item">
+                    <div class="tx-info"><div class="tx-hash">b2c3d4e5f678...</div><div class="tx-comment">Salary deposit</div><div class="tx-time">1 day ago</div></div>
+                    <div class="tx-amount in">+2.0 TON</div>
+                </div>
+                <div class="mobile-tx-item">
+                    <div class="tx-info"><div class="tx-hash">c3d4e5f67890...</div><div class="tx-comment">NFT purchase</div><div class="tx-time">2 days ago</div></div>
+                    <div class="tx-amount out">-1.0 TON</div>
+                </div>
+                <div class="mobile-tx-item">
+                    <div class="tx-info"><div class="tx-hash">d4e5f6789012...</div><div class="tx-comment">Staking reward</div><div class="tx-time">3 days ago</div></div>
+                    <div class="tx-amount in">+0.25 TON</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile NFT Panel -->
+        <div class="mobile-panel-overlay" id="mobile-nft-panel">
+            <div class="mobile-panel-header">
+                <span class="mobile-panel-title">🖼️ NFT Collection</span>
+                <button class="mobile-panel-close" onclick="closeMobilePanel('nft')">&times;</button>
+            </div>
+            <div class="mobile-panel-content">
+                <div class="mobile-nft-grid">
+                    <div class="mobile-nft-card">
+                        <div class="mobile-nft-image">💎</div>
+                        <div class="mobile-nft-name">Diamond #1234</div>
+                        <div class="mobile-nft-collection">TON Diamonds</div>
+                        <div class="mobile-nft-value">Floor: 2.5 TON</div>
+                    </div>
+                    <div class="mobile-nft-card">
+                        <div class="mobile-nft-image">👾</div>
+                        <div class="mobile-nft-name">Punk #5678</div>
+                        <div class="mobile-nft-collection">TON Punks</div>
+                        <div class="mobile-nft-value">Floor: 15 TON</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Market Panel -->
+        <div class="mobile-panel-overlay" id="mobile-market-panel">
+            <div class="mobile-panel-header">
+                <span class="mobile-panel-title">📈 Market</span>
+                <button class="mobile-panel-close" onclick="closeMobilePanel('market')">&times;</button>
+            </div>
+            <div class="mobile-panel-content">
+                <div class="mobile-stat-card"><span class="mobile-stat-label">TON Price</span><span class="mobile-stat-value" style="color: var(--accent);">$1.53</span></div>
+                <div class="mobile-stat-card"><span class="mobile-stat-label">24h Change</span><span class="mobile-stat-value" style="color: var(--danger);">-0.05%</span></div>
+                <div class="mobile-stat-card"><span class="mobile-stat-label">24h Volume</span><span class="mobile-stat-value">$69.6M</span></div>
+                <div class="mobile-stat-card"><span class="mobile-stat-label">Market Cap</span><span class="mobile-stat-value">$3.72B</span></div>
+                <div class="mobile-stat-card"><span class="mobile-stat-label">Rank</span><span class="mobile-stat-value">#18</span></div>
+                <div class="mobile-stat-card"><span class="mobile-stat-label">TVL</span><span class="mobile-stat-value">$412M</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Web App init
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#1a1a2e');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#888888');
+            document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#0088cc');
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#0088cc');
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+        }
+
+        // State
+        const TON_PRICE = 1.53;
+        let balance = 5.234;
+        let stakedAmount = 0;
+        let tokens = { USDT: 150.00, NOT: 5000, STON: 25.5 };
+        const MAX_VISIBLE_MESSAGES = 8;
+        const isMobile = () => window.innerWidth <= 768;
+
+        // ==================== MOBILE TAB SWITCHING ====================
+        function switchMobileTab(tabName) {
+            document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+                btn.classList.remove('glowing');
+            });
+            const badge = document.getElementById(`mobile-${tabName}-badge`);
+            if (badge) badge.classList.remove('visible');
+
+            if (tabName === 'chat') {
+                closeAllMobilePanels();
+            } else {
+                openMobilePanel(tabName);
+            }
+        }
+
+        function openMobilePanel(panelName) {
+            closeAllMobilePanels();
+            const panel = document.getElementById(`mobile-${panelName}-panel`);
+            if (panel) panel.classList.add('active');
+        }
+
+        function closeMobilePanel(panelName) {
+            const panel = document.getElementById(`mobile-${panelName}-panel`);
+            if (panel) {
+                panel.classList.remove('active');
+                document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === 'chat');
+                });
+            }
+        }
+
+        function closeAllMobilePanels() {
+            document.querySelectorAll('.mobile-panel-overlay').forEach(p => p.classList.remove('active'));
+        }
+
+        function glowMobileTab(tabName) {
+            const btn = document.querySelector(`.mobile-tab-btn[data-tab="${tabName}"]`);
+            if (btn && !btn.classList.contains('active')) btn.classList.add('glowing');
+        }
+
+        function showMobileTabBadge(tabName, count = 1) {
+            const badge = document.getElementById(`mobile-${tabName}-badge`);
+            if (badge) { badge.textContent = count; badge.classList.add('visible'); }
+        }
+
+        // ==================== DESKTOP PANEL HIGHLIGHTING ====================
+        function highlightPanel(panelId) {
+            const panel = document.getElementById(panelId);
+            if (panel) {
+                panel.classList.add('highlight');
+                setTimeout(() => panel.classList.remove('highlight'), 2000);
+            }
+        }
+
+        // ==================== UTILITIES ====================
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function detectTools(message, effects) {
+            const tools = [];
+            const msg = message.toLowerCase();
+            if (msg.includes('balance') || msg.includes('portfolio')) tools.push({ name: 'wallet', label: 'Wallet API' });
+            if (msg.includes('send') || msg.includes('transfer') || msg.includes('confirm')) tools.push({ name: 'tx', label: 'Send TX' });
+            if (msg.includes('swap') || msg.includes('exchange')) tools.push({ name: 'swap', label: 'DEX Swap' });
+            if (msg.includes('stake') || msg.includes('yield') || msg.includes('earn')) tools.push({ name: 'stake', label: 'Staking' });
+            if (msg.includes('nft') || msg.includes('collection')) tools.push({ name: 'nft', label: 'NFT API' });
+            if (effects) {
+                effects.forEach(e => {
+                    if (e.type === 'balance_change' && !tools.find(t => t.name === 'wallet')) tools.push({ name: 'wallet', label: 'Wallet API' });
+                    if (e.type === 'add_transaction' && !tools.find(t => t.name === 'tx')) tools.push({ name: 'tx', label: 'Send TX' });
+                    if (e.type === 'token_change' && !tools.find(t => t.name === 'swap')) tools.push({ name: 'swap', label: 'DEX Swap' });
+                    if (e.type === 'stake' && !tools.find(t => t.name === 'stake')) tools.push({ name: 'stake', label: 'Staking' });
+                });
+            }
+            return tools;
+        }
+
+        // ==================== MESSAGE HANDLING ====================
+        function createMessageElement(content, isUser, tools = [], timestamp = new Date()) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'message-wrapper';
+            const needsCollapse = content.length > (isMobile() ? 200 : 150);
+            const msgId = 'msg_' + Date.now() + Math.random().toString(36).substr(2, 5);
+            let toolBadges = '';
+            if (!isUser && tools.length > 0) {
+                toolBadges = tools.map(t => `<span class="tool-badge ${t.name}">${t.label}</span>`).join('');
+            }
+            wrapper.innerHTML = `
+                <div class="message ${isUser ? 'user' : 'assistant'}">
+                    <div class="message-content ${needsCollapse ? 'collapsed' : ''}" id="${msgId}">${content}</div>
+                    ${needsCollapse ? `<button class="expand-btn" onclick="toggleExpand('${msgId}', this)">Show more ▼</button>` : ''}
+                    <div class="message-footer">
+                        <span class="message-timestamp">${formatTime(timestamp)}</span>
+                        <div class="message-tools">${toolBadges}</div>
+                    </div>
+                </div>
+            `;
+            return wrapper;
+        }
+
+        function toggleExpand(msgId, btn) {
+            const content = document.getElementById(msgId);
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                content.classList.add('expanded');
+                btn.textContent = 'Show less ▲';
+            } else {
+                content.classList.remove('expanded');
+                content.classList.add('collapsed');
+                btn.textContent = 'Show more ▼';
+            }
+        }
+
+        function manageMessages(containerId) {
+            const container = document.getElementById(containerId);
+            const wrappers = container.querySelectorAll('.message-wrapper');
+            if (wrappers.length > MAX_VISIBLE_MESSAGES) {
+                for (let i = 0; i < wrappers.length - MAX_VISIBLE_MESSAGES; i++) {
+                    const content = wrappers[i].querySelector('.message-content');
+                    const btn = wrappers[i].querySelector('.expand-btn');
+                    if (content && !content.classList.contains('collapsed') && content.textContent.length > 150) {
+                        content.classList.add('collapsed');
+                        content.classList.remove('expanded');
+                        if (btn) btn.textContent = 'Show more ▼';
+                    }
+                }
+            }
+        }
+
+        function autoScroll(containerId) {
+            const container = document.getElementById(containerId);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ==================== TOAST NOTIFICATIONS ====================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            toast.innerHTML = `<span>${icon}</span> ${message}`;
+            container.appendChild(toast);
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred(type === 'success' ? 'success' : type === 'error' ? 'error' : 'warning');
+            }
+            setTimeout(() => { toast.classList.add('fadeOut'); setTimeout(() => toast.remove(), 400); }, 3000);
+        }
+
+        // ==================== BALANCE ANIMATION ====================
+        function animateBalance(from, to, duration = 1500) {
+            // Update BOTH desktop and mobile balance displays
+            const desktopBalance = document.getElementById('balance');
+            const desktopUsd = document.getElementById('balance-usd');
+            const mobileBalance = document.getElementById('mobile-balance');
+            const mobileUsd = document.getElementById('mobile-balance-usd');
+            const mobileTonToken = document.getElementById('mobile-ton-token-balance');
+
+            if (desktopBalance) desktopBalance.classList.add('changing');
+            if (mobileBalance) mobileBalance.classList.add('changing');
+
+            const startTime = performance.now();
+            const diff = to - from;
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = from + (diff * eased);
+
+                // Update desktop
+                if (desktopBalance) desktopBalance.textContent = current.toFixed(3) + ' TON';
+                if (desktopUsd) desktopUsd.textContent = '≈ $' + (current * TON_PRICE).toFixed(2);
+
+                // Update mobile
+                if (mobileBalance) mobileBalance.textContent = current.toFixed(3) + ' TON';
+                if (mobileUsd) mobileUsd.textContent = '≈ $' + (current * TON_PRICE).toFixed(2);
+                if (mobileTonToken) mobileTonToken.textContent = current.toFixed(3);
+
+                if (progress < 1) requestAnimationFrame(update);
+                else {
+                    if (desktopBalance) desktopBalance.classList.remove('changing');
+                    if (mobileBalance) mobileBalance.classList.remove('changing');
+                    balance = to;
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        // ==================== ADD TRANSACTION ====================
+        function addTransaction(tx) {
+            // Add transaction to BOTH desktop and mobile views
+            const txLists = ['tx-list', 'mobile-tx-list'];
+            txLists.forEach((listId, index) => {
+                const txList = document.getElementById(listId);
+                if (!txList) return;
+                const txItem = document.createElement('div');
+                txItem.className = index === 1 ? 'mobile-tx-item new' : 'tx-item new';
+                const isOutgoing = tx.amount.startsWith('-');
+                txItem.innerHTML = `
+                    <div class="tx-info">
+                        <div class="tx-hash">${tx.hash.substring(0, 12)}...</div>
+                        <div class="tx-comment">${tx.comment || 'Transfer'}</div>
+                        <div class="tx-time">Just now</div>
+                    </div>
+                    <div class="tx-amount ${isOutgoing ? 'out' : 'in'}">${tx.amount} TON</div>
+                `;
+                txList.insertBefore(txItem, txList.firstChild);
+                setTimeout(() => txItem.classList.remove('new'), 2000);
+            });
+            // Highlight on both views
+            glowMobileTab('tx');
+            showMobileTabBadge('tx', 1);
+            highlightPanel('tx-panel');
+        }
+
+        // ==================== UPDATE TOKEN BALANCE ====================
+        function updateTokenBalance(token, newAmount, flash = true) {
+            // Update BOTH desktop and mobile token displays
+            const desktopItem = document.querySelector(`[data-token="${token}"]`);
+            const desktopBalance = document.getElementById(`${token.toLowerCase()}-balance`);
+            const mobileItem = document.querySelector(`#mobile-token-list [data-token="${token}"]`);
+            const mobileBalance = document.getElementById(`mobile-${token.toLowerCase()}-balance`);
+
+            const oldAmount = tokens[token];
+            const isIncrease = newAmount > oldAmount;
+
+            // Flash both views
+            if (flash) {
+                if (desktopItem) {
+                    desktopItem.classList.add(isIncrease ? 'flash-green' : 'flash-red');
+                    setTimeout(() => desktopItem.classList.remove('flash-green', 'flash-red'), 800);
+                }
+                if (mobileItem) {
+                    mobileItem.classList.add(isIncrease ? 'flash-green' : 'flash-red');
+                    setTimeout(() => mobileItem.classList.remove('flash-green', 'flash-red'), 800);
+                }
+            }
+
+            // Highlight on both views
+            glowMobileTab('wallet');
+            showMobileTabBadge('wallet', 1);
+            highlightPanel('wallet-panel');
+
+            const duration = 800;
+            const startTime = performance.now();
+            const diff = newAmount - oldAmount;
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = oldAmount + (diff * eased);
+                const formatted = current >= 1000 ? current.toLocaleString('en-US', {maximumFractionDigits: 0}) : current.toFixed(2);
+                if (desktopBalance) desktopBalance.textContent = formatted;
+                if (mobileBalance) mobileBalance.textContent = formatted;
+                if (progress < 1) requestAnimationFrame(update);
+                else tokens[token] = newAmount;
+            }
+            requestAnimationFrame(update);
+        }
+
+        // ==================== SHOW STAKING ====================
+        function showStaking(amount, apy = '4.5%') {
+            stakedAmount += amount;
+            // Update BOTH desktop and mobile staking displays
+            const desktopBadge = document.getElementById('staking-badge');
+            const desktopAmount = document.getElementById('staked-amount');
+            const desktopApy = document.getElementById('staking-apy');
+            const mobileBadge = document.getElementById('mobile-staking-badge');
+            const mobileAmount = document.getElementById('mobile-staked-amount');
+
+            if (desktopAmount) desktopAmount.textContent = stakedAmount.toFixed(2);
+            if (desktopApy) desktopApy.textContent = apy;
+            if (desktopBadge) desktopBadge.classList.add('visible');
+            if (mobileAmount) mobileAmount.textContent = stakedAmount.toFixed(2);
+            if (mobileBadge) mobileBadge.classList.add('visible');
+
+            glowMobileTab('wallet');
+            highlightPanel('wallet-panel');
+        }
+
+        // ==================== PROCESS EFFECTS ====================
+        function processEffects(effects) {
+            if (!effects || !Array.isArray(effects)) return;
+            effects.forEach((effect, index) => {
+                setTimeout(() => {
+                    switch (effect.type) {
+                        case 'highlight_panel':
+                            if (isMobile()) {
+                                if (effect.panel === 'wallet-panel') glowMobileTab('wallet');
+                                else if (effect.panel === 'tx-panel') glowMobileTab('tx');
+                                else if (effect.panel === 'nft-panel') glowMobileTab('nft');
+                            } else {
+                                highlightPanel(effect.panel);
+                            }
+                            break;
+                        case 'balance_change':
+                            if (isMobile()) glowMobileTab('wallet');
+                            else highlightPanel('wallet-panel');
+                            animateBalance(effect.from, effect.to);
+                            break;
+                        case 'add_transaction':
+                            addTransaction(effect.tx);
+                            break;
+                        case 'token_change':
+                            updateTokenBalance(effect.token, effect.to);
+                            break;
+                        case 'stake':
+                            if (isMobile()) glowMobileTab('wallet');
+                            else highlightPanel('wallet-panel');
+                            animateBalance(balance, balance - effect.amount);
+                            setTimeout(() => showStaking(effect.amount, effect.apy), 800);
+                            break;
+                        case 'toast':
+                            showToast(effect.message, effect.variant || 'success');
+                            break;
+                    }
+                }, index * 300);
+            });
+        }
+
+        // ==================== QUICK ACTIONS ====================
+        function quickAction(action) {
+            if (isMobile()) { closeAllMobilePanels(); switchMobileTab('chat'); }
+            const prompts = { send: "I want to send some TON", swap: "I want to swap tokens", stake: "What are my staking options?", receive: "Show my wallet address", nft: "Show my NFT collection" };
+            const inputId = isMobile() ? 'mobile-chat-input' : 'chat-input';
+            document.getElementById(inputId).value = prompts[action] || '';
+            if (prompts[action]) setTimeout(() => sendMessage(), 100);
+        }
+
+        // ==================== SEND MESSAGE ====================
+        async function sendMessage() {
+            const inputId = isMobile() ? 'mobile-chat-input' : 'chat-input';
+            const typingId = isMobile() ? 'mobile-typing-indicator' : 'typing-indicator';
+
+            const input = document.getElementById(inputId);
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Get both chat containers for syncing
+            const desktopChat = document.getElementById('chat-messages');
+            const mobileChat = document.getElementById('mobile-chat-messages');
+            const typingIndicator = document.getElementById(typingId);
+
+            // Add user message to BOTH views
+            const userMsgDesktop = createMessageElement(escapeHtml(message), true);
+            const userMsgMobile = createMessageElement(escapeHtml(message), true);
+            desktopChat.appendChild(userMsgDesktop);
+            mobileChat.appendChild(userMsgMobile);
+            input.value = '';
+
+            manageMessages('chat-messages');
+            manageMessages('mobile-chat-messages');
+            autoScroll(isMobile() ? 'mobile-chat-messages' : 'chat-messages');
+            typingIndicator.classList.add('visible');
+
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: tg?.initDataUnsafe?.user?.id || 'demo_user', message, currentBalance: balance })
+                });
+                const result = await response.json();
+                typingIndicator.classList.remove('visible');
+                const tools = detectTools(message, result.effects);
+
+                // Add assistant message to BOTH views
+                const assistantMsgDesktop = createMessageElement(result.response, false, tools);
+                const assistantMsgMobile = createMessageElement(result.response, false, tools);
+                desktopChat.appendChild(assistantMsgDesktop);
+                mobileChat.appendChild(assistantMsgMobile);
+
+                manageMessages('chat-messages');
+                manageMessages('mobile-chat-messages');
+                autoScroll(isMobile() ? 'mobile-chat-messages' : 'chat-messages');
+                if (result.effects) processEffects(result.effects);
+            } catch (error) {
+                typingIndicator.classList.remove('visible');
+                // Add error message to BOTH views
+                const errorMsgDesktop = createMessageElement('Sorry, I encountered an error. Please try again.', false);
+                const errorMsgMobile = createMessageElement('Sorry, I encountered an error. Please try again.', false);
+                desktopChat.appendChild(errorMsgDesktop);
+                mobileChat.appendChild(errorMsgMobile);
+                showToast('Connection error', 'error');
+                autoScroll(isMobile() ? 'mobile-chat-messages' : 'chat-messages');
+            }
+        }
+
+        // ==================== INITIALIZE ====================
+        function updateBalanceDisplay() {
+            document.getElementById('balance').textContent = balance.toFixed(3) + ' TON';
+            document.getElementById('balance-usd').textContent = '≈ $' + (balance * TON_PRICE).toFixed(2);
+            document.getElementById('mobile-balance').textContent = balance.toFixed(3) + ' TON';
+            document.getElementById('mobile-balance-usd').textContent = '≈ $' + (balance * TON_PRICE).toFixed(2);
+            const tonTokenEl = document.getElementById('mobile-ton-token-balance');
+            if (tonTokenEl) tonTokenEl.textContent = balance.toFixed(3);
+        }
+
+        window.onload = function() {
+            updateBalanceDisplay();
+            const welcomeContent = `👋 Hi! I'm Claude, your AI wallet assistant.
+
+I can help you:
+• Check balances & analyze spending
+• Send TON or swap tokens
+• Stake for yield
+• Track your NFTs
+
+Try asking: "What's my balance?" or "Send 0.5 TON"`;
+
+            // Desktop welcome
+            const desktopChat = document.getElementById('chat-messages');
+            desktopChat.appendChild(createMessageElement(welcomeContent, false, [{ name: 'wallet', label: 'Wallet API' }]));
+
+            // Mobile welcome
+            const mobileChat = document.getElementById('mobile-chat-messages');
+            mobileChat.appendChild(createMessageElement(welcomeContent, false, [{ name: 'wallet', label: 'Wallet API' }]));
+        };
+    </script>
+</body>
+</html>

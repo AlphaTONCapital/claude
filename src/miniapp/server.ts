@@ -153,24 +153,27 @@ export class MiniAppServer {
 
     this.app.post('/api/chat', async (req, res) => {
       try {
-        const { userId, message } = req.body;
-        
+        const { userId, message, currentBalance } = req.body;
+
         if (!userId || !message) {
           return res.status(400).json({ error: 'Missing required parameters' });
         }
-        
+
         const conversation = await this.config.conversationManager.getConversation(userId);
         conversation.addUserMessage(message);
-        
+
         const response = await this.config.claudeService.generateResponse(
           conversation.getMessages(),
           userId
         );
-        
+
         conversation.addAssistantMessage(response);
         await this.config.conversationManager.saveConversation(userId, conversation);
-        
-        res.json({ response });
+
+        // Detect effects based on message content for dashboard animations
+        const effects = this.detectEffects(message.toLowerCase(), response, currentBalance);
+
+        res.json({ response, effects });
       } catch (error) {
         logger.error('Error processing chat message:', error);
         res.status(500).json({ error: 'Failed to process message' });
@@ -210,8 +213,9 @@ export class MiniAppServer {
   async start() {
     return new Promise<void>((resolve) => {
       this.server = createServer(this.app);
-      this.server.listen(this.config.port, () => {
-        logger.info(`Mini App server started on port ${this.config.port}`);
+      // Listen on 0.0.0.0 to accept connections from Railway's load balancer
+      this.server.listen(this.config.port, '0.0.0.0', () => {
+        logger.info(`Mini App server started on 0.0.0.0:${this.config.port}`);
         resolve();
       });
     });
@@ -228,5 +232,65 @@ export class MiniAppServer {
         resolve();
       }
     });
+  }
+
+  // Detect UI effects based on message content for dashboard animations
+  private detectEffects(message: string, response: string, currentBalance?: number): Array<{ type: string; [key: string]: any }> {
+    const effects: Array<{ type: string; [key: string]: any }> = [];
+
+    // Balance check
+    if (message.includes('balance') || message.includes("what's my") || message.includes('how much')) {
+      effects.push({ type: 'highlight_panel', panel: 'wallet-panel' });
+      effects.push({ type: 'toast', message: 'Balance retrieved', variant: 'info' });
+    }
+
+    // Spending analysis
+    if (message.includes('analyze') || message.includes('spending') || message.includes('history')) {
+      effects.push({ type: 'highlight_panel', panel: 'tx-panel' });
+      effects.push({ type: 'toast', message: 'Analysis complete', variant: 'success' });
+    }
+
+    // Send transaction
+    if (message.includes('send') && (message.includes('ton') || /\d/.test(message))) {
+      effects.push({ type: 'highlight_panel', panel: 'wallet-panel' });
+      effects.push({ type: 'toast', message: 'Transaction ready', variant: 'info' });
+    }
+
+    // Confirm transaction
+    if (message.includes('confirm') && currentBalance) {
+      const amountMatch = response.match(/(-?\d+\.?\d*)\s*TON/i);
+      if (amountMatch) {
+        const amount = Math.abs(parseFloat(amountMatch[1]));
+        const newBalance = currentBalance - amount - 0.003;
+        effects.push({ type: 'balance_change', from: currentBalance, to: newBalance });
+        effects.push({
+          type: 'add_transaction',
+          tx: {
+            hash: 'tx_' + Math.random().toString(36).substring(2, 14),
+            amount: `-${amount}`,
+            comment: 'Transfer'
+          }
+        });
+        effects.push({ type: 'toast', message: 'Transaction confirmed!', variant: 'success' });
+      }
+    }
+
+    // Staking
+    if (message.includes('stake')) {
+      effects.push({ type: 'highlight_panel', panel: 'wallet-panel' });
+    }
+
+    // Swap
+    if (message.includes('swap')) {
+      effects.push({ type: 'highlight_panel', panel: 'wallet-panel' });
+    }
+
+    // NFTs
+    if (message.includes('nft')) {
+      effects.push({ type: 'highlight_panel', panel: 'nft-panel' });
+      effects.push({ type: 'toast', message: 'NFTs loaded', variant: 'info' });
+    }
+
+    return effects;
   }
 }
