@@ -7,7 +7,7 @@ const configSchema = z.object({
   telegram: z.object({
     botToken: z.string(),
     webhookDomain: z.string().optional(),
-    webhookPort: z.coerce.number().default(3000),
+    webhookPort: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(3000)),
     allowedUsers: z.string().transform(s => s ? s.split(',').map(u => u.trim()) : []).default(''),
     adminUsers: z.string().transform(s => s ? s.split(',').map(u => u.trim()) : []).default(''),
     miniAppUrl: z.string().optional(),
@@ -16,17 +16,17 @@ const configSchema = z.object({
   claude: z.object({
     apiKey: z.string(),
     model: z.string().default('claude-3-5-sonnet-20241022'),
-    maxTokens: z.coerce.number().default(4096),
+    maxTokens: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(4096)),
   }),
   mcp: z.object({
     serverName: z.string().default('telegram-claude-mcp'),
     serverVersion: z.string().default('1.0.0'),
-    serverPort: z.coerce.number().default(8080),
+    serverPort: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(8080)),
   }),
   redis: z.object({
     url: z.string().default('redis://localhost:6379'),
     password: z.string().optional(),
-    db: z.coerce.number().default(0),
+    db: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(0)),
   }),
   ton: z.object({
     network: z.enum(['mainnet', 'testnet']).default('testnet'),
@@ -45,12 +45,12 @@ const configSchema = z.object({
   app: z.object({
     nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
     logLevel: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-    maxMessageLength: z.coerce.number().default(4000),
-    conversationTimeoutMinutes: z.coerce.number().default(30),
+    maxMessageLength: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(4000)),
+    conversationTimeoutMinutes: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(30)),
   }),
   rateLimit: z.object({
-    maxRequests: z.coerce.number().default(20),
-    windowMs: z.coerce.number().default(60000),
+    maxRequests: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(20)),
+    windowMs: z.preprocess((val) => (val === undefined || val === '' ? undefined : Number(val)), z.number().default(60000)),
   }),
 });
 
