@@ -62,9 +62,7 @@ async function main() {
       logger.info('JIRA service initialized');
     }
 
-    await telegramBot.launch();
-    
-    // Always start the Mini App server for the web dashboard
+    // Start the Mini App server FIRST for Railway health checks
     const miniAppPort = parseInt(process.env.PORT || '3001');
     const miniAppServer = new MiniAppServer({
       port: miniAppPort,
@@ -76,6 +74,9 @@ async function main() {
 
     await miniAppServer.start();
     logger.info(`Mini App server started on port ${miniAppPort}`);
+
+    // Launch Telegram bot after HTTP server is ready
+    await telegramBot.launch();
 
     // Only connect MCP stdio transport if not running as web server
     // Railway/web deployments set PORT env var, MCP mode doesn't
