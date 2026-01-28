@@ -64,18 +64,18 @@ async function main() {
 
     await telegramBot.launch();
     
-    if (config.telegram.miniAppUrl && config.telegram.miniAppSecret) {
-      const miniAppServer = new MiniAppServer({
-        port: 3001,
-        secret: config.telegram.miniAppSecret,
-        tonService,
-        claudeService,
-        conversationManager,
-      });
-      
-      await miniAppServer.start();
-      logger.info('Mini App server started');
-    }
+    // Always start the Mini App server for the web dashboard
+    const miniAppPort = parseInt(process.env.PORT || '3001');
+    const miniAppServer = new MiniAppServer({
+      port: miniAppPort,
+      secret: config.telegram.miniAppSecret || 'demo-secret',
+      tonService,
+      claudeService,
+      conversationManager,
+    });
+
+    await miniAppServer.start();
+    logger.info(`Mini App server started on port ${miniAppPort}`);
     
     const transport = new StdioServerTransport();
     await server.connect(transport);
