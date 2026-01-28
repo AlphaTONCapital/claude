@@ -62,8 +62,8 @@ temp/
 *.temp
 
 # Docker
-.dockerignore
 docker-compose.override.yml
+# Note: .dockerignore is NOT ignored - it's needed for optimized Docker builds
 
 # Redis
 dump.rdb
