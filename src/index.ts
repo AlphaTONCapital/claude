@@ -14,6 +14,35 @@ async function main() {
   try {
     logger.info('Starting Telegram Claude MCP Connector...');
 
+    // Create services (synchronous - no await needed)
+    const claudeService = new ClaudeService(config.claude);
+    const conversationManager = new ConversationManager(config.redis);
+    const tonService = new TonService(config.ton);
+    const jiraService = config.jira.apiKey ? new JiraService(config.jira as any) : null;
+
+    // Start HTTP server IMMEDIATELY for Railway health checks
+    const miniAppPort = parseInt(process.env.PORT || '3001');
+    const miniAppServer = new MiniAppServer({
+      port: miniAppPort,
+      secret: config.telegram.miniAppSecret || 'demo-secret',
+      tonService,
+      claudeService,
+      conversationManager,
+    });
+
+    await miniAppServer.start();
+    logger.info(`Mini App server started on port ${miniAppPort}`);
+
+    // Now initialize other services (can take time, but health checks will pass)
+    await conversationManager.connect();
+
+    if (config.ton.walletMnemonic) {
+      await tonService.initialize();
+      logger.info('TON blockchain service initialized');
+    } else {
+      logger.warn('TON wallet mnemonic not configured, TON features will be limited');
+    }
+
     const server = new Server(
       {
         name: config.mcp.serverName,
@@ -28,20 +57,6 @@ async function main() {
       }
     );
 
-    const claudeService = new ClaudeService(config.claude);
-    const conversationManager = new ConversationManager(config.redis);
-    const tonService = new TonService(config.ton);
-    const jiraService = config.jira.apiKey ? new JiraService(config.jira as any) : null;
-    
-    await conversationManager.connect();
-    
-    if (config.ton.walletMnemonic) {
-      await tonService.initialize();
-      logger.info('TON blockchain service initialized');
-    } else {
-      logger.warn('TON wallet mnemonic not configured, TON features will be limited');
-    }
-    
     const telegramBot = new TelegramBot(
       config.telegram,
       claudeService,
@@ -57,25 +72,12 @@ async function main() {
       tonService,
       jiraService
     );
-    
+
     if (jiraService) {
       logger.info('JIRA service initialized');
     }
 
-    // Start the Mini App server FIRST for Railway health checks
-    const miniAppPort = parseInt(process.env.PORT || '3001');
-    const miniAppServer = new MiniAppServer({
-      port: miniAppPort,
-      secret: config.telegram.miniAppSecret || 'demo-secret',
-      tonService,
-      claudeService,
-      conversationManager,
-    });
-
-    await miniAppServer.start();
-    logger.info(`Mini App server started on port ${miniAppPort}`);
-
-    // Launch Telegram bot after HTTP server is ready
+    // Launch Telegram bot
     await telegramBot.launch();
 
     // Only connect MCP stdio transport if not running as web server
