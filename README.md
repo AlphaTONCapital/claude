@@ -1,5 +1,13 @@
 # Telegram Claude MCP TON Connector
 
+<div align="center">
+
+[![Demo Video](https://cdn.loom.com/sessions/thumbnails/11d1017bab6b4c7ab8468a1ce33d201c-f75eb6dfd4cc56ba-full-play.gif)](https://www.loom.com/share/11d1017bab6b4c7ab8468a1ce33d201c)
+
+**[Watch Demo](https://www.loom.com/share/11d1017bab6b4c7ab8468a1ce33d201c)**
+
+</div>
+
 > **Bridge Claude AI, Telegram, and TON Blockchain with seamless Model Context Protocol integration**
 
 A production-ready connector that enables Claude AI to interact with Telegram bots, TON blockchain operations, and JIRA project management through the Model Context Protocol (MCP). Built for developers who want to create powerful AI-powered Telegram bots with blockchain capabilities.
