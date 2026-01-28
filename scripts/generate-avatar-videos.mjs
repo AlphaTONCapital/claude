@@ -75,19 +75,17 @@ async function generateElevenLabsAudio(text, sceneId, voiceConfig) {
 }
 
 async function uploadAudioToHeyGen(audioPath) {
-  // HeyGen requires audio to be uploaded first to get a URL
+  // HeyGen requires audio to be uploaded as raw binary data
   const audioData = await fs.readFile(audioPath);
 
-  // Upload to HeyGen's asset endpoint
-  const formData = new FormData();
-  formData.append('file', new Blob([audioData], { type: 'audio/mpeg' }), path.basename(audioPath));
-
+  // Upload to HeyGen's asset endpoint with raw binary
   const uploadResponse = await fetch('https://upload.heygen.com/v1/asset', {
     method: 'POST',
     headers: {
-      'X-Api-Key': HEYGEN_API_KEY
+      'X-Api-Key': HEYGEN_API_KEY,
+      'Content-Type': 'audio/mpeg'
     },
-    body: formData
+    body: audioData
   });
 
   if (!uploadResponse.ok) {
@@ -96,7 +94,8 @@ async function uploadAudioToHeyGen(audioPath) {
   }
 
   const uploadResult = await uploadResponse.json();
-  return uploadResult.data.url || uploadResult.data.asset_id;
+  // Return the URL or asset ID from the response
+  return uploadResult.data.url || uploadResult.data.id;
 }
 
 async function generateHeyGenVideo(audioPath, sceneId, avatarConfig) {
@@ -121,7 +120,7 @@ async function generateHeyGenVideo(audioPath, sceneId, avatarConfig) {
     },
     background: {
       type: 'color',
-      value: '#00000000'  // Transparent
+      value: '#000000'  // Black background
     }
   };
 
@@ -153,7 +152,7 @@ async function generateHeyGenVideo(audioPath, sceneId, avatarConfig) {
   // Step 3: Poll for completion
   let videoUrl = null;
   let attempts = 0;
-  const maxAttempts = 60; // 5 minutes max wait
+  const maxAttempts = 120; // 10 minutes max wait
 
   while (!videoUrl && attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
