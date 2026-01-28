@@ -1139,58 +1139,7 @@
         <div class="avatar-video-container">
             <video class="avatar-video" id="avatar-video" playsinline></video>
             <div class="avatar-placeholder" id="avatar-placeholder">
-                <!-- Eliza Avatar - Brown hair, Orange eyes -->
-                <svg class="eliza-avatar" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Background glow -->
-                    <defs>
-                        <radialGradient id="elizaGlow" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" style="stop-color:#ff8c42;stop-opacity:0.3"/>
-                            <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:0"/>
-                        </radialGradient>
-                        <linearGradient id="hairGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#8B4513"/>
-                            <stop offset="50%" style="stop-color:#5D3A1A"/>
-                            <stop offset="100%" style="stop-color:#3D2314"/>
-                        </linearGradient>
-                        <linearGradient id="skinGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#FFE4C4"/>
-                            <stop offset="100%" style="stop-color:#DEB887"/>
-                        </linearGradient>
-                    </defs>
-                    <!-- Glow background -->
-                    <circle cx="100" cy="100" r="95" fill="url(#elizaGlow)"/>
-                    <!-- Hair back -->
-                    <ellipse cx="100" cy="95" rx="70" ry="75" fill="url(#hairGradient)"/>
-                    <!-- Face -->
-                    <ellipse cx="100" cy="105" rx="50" ry="55" fill="url(#skinGradient)"/>
-                    <!-- Hair front/bangs -->
-                    <path d="M45 85 Q50 50 100 45 Q150 50 155 85 Q150 70 100 65 Q50 70 45 85" fill="url(#hairGradient)"/>
-                    <!-- Hair sides -->
-                    <ellipse cx="55" cy="110" rx="15" ry="40" fill="url(#hairGradient)"/>
-                    <ellipse cx="145" cy="110" rx="15" ry="40" fill="url(#hairGradient)"/>
-                    <!-- Eyes -->
-                    <ellipse cx="80" cy="105" rx="12" ry="10" fill="white"/>
-                    <ellipse cx="120" cy="105" rx="12" ry="10" fill="white"/>
-                    <!-- Iris - Orange -->
-                    <circle cx="80" cy="106" r="7" fill="#FF6B35"/>
-                    <circle cx="120" cy="106" r="7" fill="#FF6B35"/>
-                    <!-- Pupils -->
-                    <circle cx="80" cy="106" r="3" fill="#1a1a2e"/>
-                    <circle cx="120" cy="106" r="3" fill="#1a1a2e"/>
-                    <!-- Eye shine -->
-                    <circle cx="82" cy="104" r="2" fill="white" opacity="0.8"/>
-                    <circle cx="122" cy="104" r="2" fill="white" opacity="0.8"/>
-                    <!-- Eyebrows -->
-                    <path d="M68 92 Q80 88 92 92" stroke="#5D3A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                    <path d="M108 92 Q120 88 132 92" stroke="#5D3A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                    <!-- Nose -->
-                    <path d="M100 110 L97 125 Q100 128 103 125 L100 110" fill="#DEB887" opacity="0.5"/>
-                    <!-- Mouth - slight smile -->
-                    <path d="M85 140 Q100 150 115 140" stroke="#c97878" stroke-width="3" fill="none" stroke-linecap="round" class="eliza-mouth"/>
-                    <!-- Blush -->
-                    <ellipse cx="70" cy="125" rx="10" ry="6" fill="#FFB6C1" opacity="0.4"/>
-                    <ellipse cx="130" cy="125" rx="10" ry="6" fill="#FFB6C1" opacity="0.4"/>
-                </svg>
+                <span style="font-size: 100px; line-height: 1;">💎</span>
             </div>
             <div class="avatar-waveform" id="avatar-waveform">
                 <div class="wave-bar"></div>
@@ -1213,16 +1162,7 @@
         </div>
         <div class="avatar-scene-indicator" id="avatar-scene-indicator"></div>
         <div class="avatar-mini-icon" id="avatar-mini-icon">
-            <!-- Mini Eliza face -->
-            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="32" cy="32" r="30" fill="#5D3A1A"/>
-                <ellipse cx="32" cy="36" rx="22" ry="24" fill="#FFE4C4"/>
-                <circle cx="24" cy="34" r="4" fill="#FF6B35"/>
-                <circle cx="40" cy="34" r="4" fill="#FF6B35"/>
-                <circle cx="24" cy="34" r="1.5" fill="#1a1a2e"/>
-                <circle cx="40" cy="34" r="1.5" fill="#1a1a2e"/>
-                <path d="M26 46 Q32 50 38 46" stroke="#c97878" stroke-width="2" fill="none" stroke-linecap="round"/>
-            </svg>
+            <span style="font-size: 32px;">💎</span>
         </div>
     </div>
 
@@ -2176,10 +2116,43 @@
 
             async speak(text, sceneId) {
                 return new Promise((resolve) => {
-                    // Check if we have pre-generated audio
+                    // Check if we have pre-generated content
                     if (this.manifestLoaded && this.manifest) {
                         const sceneData = this.manifest.scenes.find(s => s.id === sceneId);
+
+                        // If we have video, use it (it has embedded audio from HeyGen)
+                        if (sceneData && sceneData.video) {
+                            this.elements.video.src = sceneData.video;
+                            this.elements.video.style.display = 'block';
+                            this.elements.placeholder.style.display = 'none';
+
+                            this.elements.video.onended = () => {
+                                // Hide video, show placeholder after scene
+                                this.elements.video.style.display = 'none';
+                                this.elements.placeholder.style.display = 'flex';
+                                resolve();
+                            };
+                            this.elements.video.onerror = () => {
+                                // Fallback to audio only
+                                this.elements.video.style.display = 'none';
+                                this.elements.placeholder.style.display = 'flex';
+                                if (sceneData.audio) {
+                                    const audio = new Audio(sceneData.audio);
+                                    audio.onended = resolve;
+                                    audio.onerror = () => this.speakWithSynthesis(text, resolve);
+                                    audio.play();
+                                } else {
+                                    this.speakWithSynthesis(text, resolve);
+                                }
+                            };
+                            this.elements.video.play();
+                            return;
+                        }
+
+                        // If we have audio only, use it with SVG avatar
                         if (sceneData && sceneData.audio) {
+                            this.elements.video.style.display = 'none';
+                            this.elements.placeholder.style.display = 'flex';
                             const audio = new Audio(sceneData.audio);
                             audio.onended = resolve;
                             audio.onerror = () => {
@@ -2191,7 +2164,9 @@
                         }
                     }
 
-                    // Fallback: use browser speech synthesis
+                    // Fallback: use browser speech synthesis with SVG
+                    this.elements.video.style.display = 'none';
+                    this.elements.placeholder.style.display = 'flex';
                     this.speakWithSynthesis(text, resolve);
                 });
             },

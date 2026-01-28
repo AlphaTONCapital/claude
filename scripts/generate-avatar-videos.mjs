@@ -1,18 +1,19 @@
 #!/usr/bin/env node
 /**
- * Avatar Video Generation Script
+ * Avatar Audio/Video Generation Script
  *
- * This script generates avatar videos with voice narration for the demo.
+ * This script generates audio (and optionally video) with voice narration for the demo.
  * It uses:
  * - ElevenLabs API for high-quality text-to-speech
- * - HeyGen API for realistic avatar video generation
+ * - HeyGen API for realistic avatar video generation (optional)
  *
  * Prerequisites:
  * - ELEVENLABS_API_KEY environment variable
- * - HEYGEN_API_KEY environment variable
+ * - HEYGEN_API_KEY environment variable (optional, for video)
  *
  * Usage:
- * node scripts/generate-avatar-videos.mjs
+ * node scripts/generate-avatar-videos.mjs                  # Audio only
+ * node scripts/generate-avatar-videos.mjs --with-video     # Audio + Video
  */
 
 import fs from 'fs/promises';
@@ -24,6 +25,7 @@ const projectRoot = path.resolve(__dirname, '..');
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const HEYGEN_API_KEY = process.env.HEYGEN_API_KEY;
+const GENERATE_VIDEO = process.argv.includes('--with-video');
 
 const OUTPUT_DIR = path.join(projectRoot, 'public', 'avatar');
 
@@ -72,12 +74,56 @@ async function generateElevenLabsAudio(text, sceneId, voiceConfig) {
   return outputPath;
 }
 
+async function uploadAudioToHeyGen(audioPath) {
+  // HeyGen requires audio to be uploaded as raw binary data
+  const audioData = await fs.readFile(audioPath);
+
+  // Upload to HeyGen's asset endpoint with raw binary
+  const uploadResponse = await fetch('https://upload.heygen.com/v1/asset', {
+    method: 'POST',
+    headers: {
+      'X-Api-Key': HEYGEN_API_KEY,
+      'Content-Type': 'audio/mpeg'
+    },
+    body: audioData
+  });
+
+  if (!uploadResponse.ok) {
+    const errorText = await uploadResponse.text();
+    throw new Error(`HeyGen upload error: ${uploadResponse.status} - ${errorText}`);
+  }
+
+  const uploadResult = await uploadResponse.json();
+  // Return the URL or asset ID from the response
+  return uploadResult.data.url || uploadResult.data.id;
+}
+
 async function generateHeyGenVideo(audioPath, sceneId, avatarConfig) {
   // Step 1: Upload audio to HeyGen
-  const audioData = await fs.readFile(audioPath);
-  const audioBase64 = audioData.toString('base64');
+  console.log('  Uploading audio to HeyGen...');
+  const audioAsset = await uploadAudioToHeyGen(audioPath);
+  console.log(`  Audio uploaded: ${audioAsset}`);
 
   // Step 2: Create video generation task
+  const videoInput = {
+    character: {
+      type: 'avatar',
+      avatar_id: avatarConfig.avatarId,
+      avatar_style: 'normal'
+    },
+    voice: {
+      type: 'audio',
+      // Use audio_url if it's a URL, otherwise audio_asset_id
+      ...(audioAsset.startsWith('http')
+        ? { audio_url: audioAsset }
+        : { audio_asset_id: audioAsset })
+    },
+    background: {
+      type: 'color',
+      value: '#000000'  // Black background
+    }
+  };
+
   const createResponse = await fetch('https://api.heygen.com/v2/video/generate', {
     method: 'POST',
     headers: {
@@ -85,21 +131,7 @@ async function generateHeyGenVideo(audioPath, sceneId, avatarConfig) {
       'X-Api-Key': HEYGEN_API_KEY
     },
     body: JSON.stringify({
-      video_inputs: [{
-        character: {
-          type: 'avatar',
-          avatar_id: avatarConfig.avatarId,
-          avatar_style: 'normal'
-        },
-        voice: {
-          type: 'audio',
-          audio_base64: audioBase64
-        },
-        background: {
-          type: 'color',
-          value: '#00000000'  // Transparent
-        }
-      }],
+      video_inputs: [videoInput],
       dimension: {
         width: 512,
         height: 512
@@ -120,7 +152,7 @@ async function generateHeyGenVideo(audioPath, sceneId, avatarConfig) {
   // Step 3: Poll for completion
   let videoUrl = null;
   let attempts = 0;
-  const maxAttempts = 60; // 5 minutes max wait
+  const maxAttempts = 120; // 10 minutes max wait
 
   while (!videoUrl && attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
@@ -175,7 +207,8 @@ async function generateManifest(scenes, generatedFiles) {
 }
 
 async function main() {
-  console.log('=== Avatar Video Generation ===\n');
+  console.log('=== Avatar Audio/Video Generation ===\n');
+  console.log(`Mode: ${GENERATE_VIDEO ? 'Audio + Video' : 'Audio only'}\n`);
 
   if (!ELEVENLABS_API_KEY) {
     console.error('ERROR: ELEVENLABS_API_KEY environment variable not set');
@@ -185,8 +218,8 @@ async function main() {
     process.exit(1);
   }
 
-  if (!HEYGEN_API_KEY) {
-    console.error('ERROR: HEYGEN_API_KEY environment variable not set');
+  if (GENERATE_VIDEO && !HEYGEN_API_KEY) {
+    console.error('ERROR: HEYGEN_API_KEY environment variable not set (required for --with-video)');
     console.log('\nTo set it:');
     console.log('  export HEYGEN_API_KEY="your-api-key"');
     console.log('\nGet your API key at: https://heygen.com/');
@@ -199,7 +232,10 @@ async function main() {
   console.log(`Loaded script: ${script.title}`);
   console.log(`Total scenes: ${script.scenes.length}`);
   console.log(`Voice: ${script.voice.voiceName} (${script.voice.provider})`);
-  console.log(`Avatar: ${script.avatar.avatarId} (${script.avatar.provider})\n`);
+  if (GENERATE_VIDEO) {
+    console.log(`Avatar: ${script.avatar.avatarId} (${script.avatar.provider})`);
+  }
+  console.log('');
 
   const generatedFiles = [];
 
@@ -217,13 +253,15 @@ async function main() {
     );
     generated.audio = audioPath;
 
-    // Generate video with avatar
-    const videoPath = await generateHeyGenVideo(
-      audioPath,
-      scene.id,
-      script.avatar
-    );
-    generated.video = videoPath;
+    // Generate video with avatar (only if requested)
+    if (GENERATE_VIDEO) {
+      const videoPath = await generateHeyGenVideo(
+        audioPath,
+        scene.id,
+        script.avatar
+      );
+      generated.video = videoPath;
+    }
 
     generatedFiles.push(generated);
   }
@@ -232,7 +270,11 @@ async function main() {
 
   console.log('\n=== Generation Complete ===');
   console.log(`Audio files: ${generatedFiles.filter(f => f.audio).length}`);
-  console.log(`Video files: ${generatedFiles.filter(f => f.video).length}`);
+  if (GENERATE_VIDEO) {
+    console.log(`Video files: ${generatedFiles.filter(f => f.video).length}`);
+  }
+  console.log('\nThe dashboard will use ElevenLabs audio with the animated SVG avatar.');
+  console.log('To use HeyGen video avatars, run with: --with-video');
 }
 
 main().catch(error => {
