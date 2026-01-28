@@ -1,101 +1,101 @@
 {
-  "generated": "2026-01-28T14:49:49.552Z",
+  "generated": "2026-01-28T16:25:21.946Z",
   "scenes": [
     {
       "id": "intro",
       "audio": "/avatar/audio/intro.mp3",
-      "video": null,
+      "video": "/avatar/video/intro.mp4",
       "durationMs": 8000,
       "narration": "Hi, I'm Eliza! Welcome to TON Claude. This is an AI-powered financial assistant that connects Claude AI with the TON blockchain. Let me show you what it can do."
     },
     {
       "id": "balance_intro",
       "audio": "/avatar/audio/balance_intro.mp3",
-      "video": null,
+      "video": "/avatar/video/balance_intro.mp4",
       "durationMs": 4500,
       "narration": "First, let's check your wallet balance. I'll ask Claude to query the blockchain for you."
     },
     {
       "id": "balance_result",
       "audio": "/avatar/audio/balance_result.mp3",
-      "video": null,
+      "video": "/avatar/video/balance_result.mp4",
       "durationMs": 7500,
       "narration": "See how the wallet panel highlights? Claude is retrieving your real-time balance from the TON network. You have 5.234 TON, worth about 8 dollars."
     },
     {
       "id": "spending_intro",
       "audio": "/avatar/audio/spending_intro.mp3",
-      "video": null,
+      "video": "/avatar/video/spending_intro.mp4",
       "durationMs": 5500,
       "narration": "Now let's analyze your spending patterns. Claude can examine your transaction history and give you useful insights."
     },
     {
       "id": "spending_result",
       "audio": "/avatar/audio/spending_result.mp3",
-      "video": null,
+      "video": "/avatar/video/spending_result.mp4",
       "durationMs": 6500,
       "narration": "Watch the transaction panel light up as Claude processes your spending data. It categorizes everything and identifies patterns in your activity."
     },
     {
       "id": "send_intro",
       "audio": "/avatar/audio/send_intro.mp3",
-      "video": null,
+      "video": "/avatar/video/send_intro.mp4",
       "durationMs": 5000,
       "narration": "Let's send some TON. I'll initiate a transfer of half a TON to another wallet."
     },
     {
       "id": "send_prepare",
       "audio": "/avatar/audio/send_prepare.mp3",
-      "video": null,
+      "video": "/avatar/video/send_prepare.mp4",
       "durationMs": 6000,
       "narration": "Claude prepares the transaction and asks for confirmation. This two-step process keeps your funds safe from accidental transfers."
     },
     {
       "id": "confirm_intro",
       "audio": "/avatar/audio/confirm_intro.mp3",
-      "video": null,
+      "video": "/avatar/video/confirm_intro.mp4",
       "durationMs": 4000,
       "narration": "I'll confirm the transaction now. Watch the balance update in real-time!"
     },
     {
       "id": "confirm_result",
       "audio": "/avatar/audio/confirm_result.mp3",
-      "video": null,
+      "video": "/avatar/video/confirm_result.mp4",
       "durationMs": 7000,
       "narration": "Transaction confirmed! Notice how the balance animates down and a new transaction appears in your history. That's the blockchain in action."
     },
     {
       "id": "stake_intro",
       "audio": "/avatar/audio/stake_intro.mp3",
-      "video": null,
+      "video": "/avatar/video/stake_intro.mp4",
       "durationMs": 4500,
       "narration": "Claude also supports staking. Let's stake 2 TON to earn some passive income."
     },
     {
       "id": "stake_result",
       "audio": "/avatar/audio/stake_result.mp3",
-      "video": null,
+      "video": "/avatar/video/stake_result.mp4",
       "durationMs": 6000,
       "narration": "The staking badge appears showing your 2 TON staked at 4.5% APY. Your funds are now earning yield on the TON network!"
     },
     {
       "id": "nft_intro",
       "audio": "/avatar/audio/nft_intro.mp3",
-      "video": null,
+      "video": "/avatar/video/nft_intro.mp4",
       "durationMs": 4500,
       "narration": "Finally, let's check out your NFT collection. TON has a thriving NFT ecosystem."
     },
     {
       "id": "nft_result",
       "audio": "/avatar/audio/nft_result.mp3",
-      "video": null,
+      "video": "/avatar/video/nft_result.mp4",
       "durationMs": 6500,
       "narration": "The NFT panel highlights, showing your digital collectibles. You can view, transfer, or list them for sale directly through Claude."
     },
     {
       "id": "outro",
       "audio": "/avatar/audio/outro.mp3",
-      "video": null,
+      "video": "/avatar/video/outro.mp4",
       "durationMs": 7500,
       "narration": "And that's TON Claude! An AI assistant that makes blockchain finance accessible, secure, and conversational. Thanks for watching!"
     }
